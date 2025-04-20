@@ -1,6 +1,14 @@
 // src/user/entities/client.entity.ts
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Factura } from '../../factura/entities/factura.entity';
+import { Plan } from '../../plan/entities/plan.entity';
 
 @Entity()
 export class Client {
@@ -11,7 +19,10 @@ export class Client {
   nombre: string;
 
   @Column()
-  cedula: string;
+  tipoDocumento: string;
+
+  @Column()
+  numeroDocumento: string;
 
   @Column()
   email: string;
@@ -21,5 +32,9 @@ export class Client {
 
   @OneToMany(() => Factura, (factura) => factura.cliente)
   facturas: Factura[];
-  plan: any;
+
+  // Relación con Plan
+  @ManyToOne(() => Plan, (plan) => plan.clientes, { eager: true })
+  @JoinColumn({ name: 'planId' }) // El nombre de la columna que se genera en la tabla Client
+  plan: Plan;
 }

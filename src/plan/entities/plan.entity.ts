@@ -13,7 +13,6 @@ export class Plan {
   @Column('decimal', { precision: 10, scale: 2 })
   precio: number;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   @OneToMany(() => Client, (client) => client.plan)
   clientes: Client[];
 }
