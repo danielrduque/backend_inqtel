@@ -1,16 +1,19 @@
 // src/factura/entities/factura.entity.ts
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
+import { Client } from '../../user/entities/client.entity';
+import { Pago } from '../../pago/entities/pago.entity';
 
-@Entity({ name: 'factura', schema: 'public' }) // Especifica el esquema public
+@Entity({ name: 'factura', schema: 'public' }) // Esquema explícito
 export class Factura {
   @PrimaryGeneratedColumn()
   id: number;
-
-  @Column()
-  cedula: string;
-
-  @Column()
-  nombre: string;
 
   @Column()
   concepto: string;
@@ -20,4 +23,19 @@ export class Factura {
 
   @Column({ type: 'date' })
   fecha: Date;
+
+  @Column({ type: 'date', nullable: true })
+  fechaLimite: Date;
+
+  // Relación con Cliente
+  @ManyToOne(() => Client, (client) => client.facturas, {
+    eager: true,
+    nullable: false, // Asegura que no sea null
+  })
+  @JoinColumn({ name: 'clienteId' }) // Esta línea es para que la columna se llame 'clienteId'
+  cliente: Client;
+
+  // Relación con pagos
+  @OneToMany(() => Pago, (pago) => pago.factura)
+  pagos: Pago[];
 }
