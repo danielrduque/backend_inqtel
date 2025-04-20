@@ -8,11 +8,11 @@ import { UserModule } from './user/user.module'; // Importa el módulo de Usuari
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
+      host: 'interchange.proxy.rlwy.net',
+      port: 26514,
       username: 'postgres', // cambia esto si usas otro usuario
-      password: '123456789', // pon tu contraseña
-      database: 'postgres', // o el nombre que le hayas puesto
+      password: 'UrnpvoRMnojLdNmcdzJuJKEYGpMwVuoF', // pon tu contraseña
+      database: 'railway', // o el nombre que le hayas puesto
       entities: [__dirname + '/**/*.entity{.ts,.js}'], // Asegúrate de que todas las entidades estén aquí
       synchronize: true, // solo en desarrollo
     }),
