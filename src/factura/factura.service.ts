@@ -11,34 +11,58 @@ export class FacturaService {
   constructor(
     @InjectRepository(Factura)
     private facturaRepository: Repository<Factura>,
-    private userService: UserService, // Inyectamos UserService en lugar de ClientService
+    private userService: UserService,
   ) {}
 
-  // Método para crear una nueva factura
+  // Crear factura
   async create(createFacturaDto: CreateFacturaDto): Promise<Factura> {
-    // Usamos el servicio UserService para buscar al cliente
     const cliente = await this.userService.findOne(createFacturaDto.clienteId);
 
     if (!cliente) {
       throw new Error('Cliente no encontrado');
     }
 
-    // Creamos la nueva factura asociando el cliente
     const nuevaFactura = this.facturaRepository.create({
-      ...createFacturaDto, // Propiedades del DTO
-      cliente, // Relacionamos la factura con el cliente
+      ...createFacturaDto,
+      cliente,
     });
 
-    // Guardamos la factura en la base de datos
     return this.facturaRepository.save(nuevaFactura);
   }
 
-  // Método para buscar facturas por clienteId
+  // Buscar facturas por clienteId
   async findByClienteId(clienteId: number): Promise<Factura[]> {
     return this.facturaRepository.find({
-      where: {
-        cliente: { id: clienteId }, // Usamos la relación con cliente
-      },
+      where: { cliente: { id: clienteId } },
+      relations: ['cliente', 'cliente.plan'],
     });
+  }
+
+  // Buscar factura por numeroDocumento del cliente
+  async findByNumeroDocumento(numeroDocumento: string): Promise<any> {
+    const cliente =
+      await this.userService.findByNumeroDocumento(numeroDocumento);
+
+    if (!cliente) {
+      return { encontrado: false };
+    }
+
+    const facturas = await this.facturaRepository.find({
+      where: { cliente: { id: cliente.id } },
+      relations: ['cliente', 'cliente.plan'],
+    });
+
+    if (facturas.length === 0) {
+      return { encontrado: false };
+    }
+
+    const factura = facturas[0];
+
+    return {
+      nombre: factura.cliente.nombre,
+      plan: factura.cliente.plan.nombre,
+      precio: factura.valor,
+      fechaLimite: factura.fechaLimite,
+    };
   }
 }

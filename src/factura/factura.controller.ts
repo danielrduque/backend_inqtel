@@ -16,12 +16,27 @@ export class FacturaController {
   async findByClienteId(
     @Param('clienteId') clienteId: number,
   ): Promise<Factura | { encontrado: boolean }> {
-    // Llamar al método findByClienteId en lugar de findByCedula
     const factura = await this.facturaService.findByClienteId(clienteId);
     if (factura.length > 0) {
-      return factura[0]; // Devuelve la primera factura encontrada
+      return factura[0];
     } else {
-      return { encontrado: false }; // Devuelve 'false' si no encuentra la factura
+      return { encontrado: false };
     }
+  }
+
+  // Nuevo endpoint para buscar por número de documento
+  @Get('consulta/:numeroDocumento')
+  async findByNumeroDocumento(
+    @Param('numeroDocumento') numeroDocumento: string,
+  ): Promise<
+    | {
+        nombre: string;
+        plan: string;
+        precio: number;
+        fechaLimite: Date;
+      }
+    | { encontrado: false }
+  > {
+    return this.facturaService.findByNumeroDocumento(numeroDocumento);
   }
 }

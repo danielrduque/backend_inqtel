@@ -30,4 +30,12 @@ export class UserService {
       where: { id: clientId },
     });
   }
+
+  // Nuevo método: buscar cliente por número de documento
+  async findByNumeroDocumento(numeroDocumento: string): Promise<Client | null> {
+    return this.clientRepository.findOne({
+      where: { numeroDocumento },
+      relations: ['plan'], // Cargamos el plan para poder acceder al nombre y precio
+    });
+  }
 }
