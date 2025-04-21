@@ -10,6 +10,13 @@ import {
 import { Client } from '../../user/entities/client.entity';
 import { Pago } from '../../pago/entities/pago.entity';
 
+// Enum para los estados de la factura
+export enum EstadoFactura {
+  PENDIENTE = 'pendiente',
+  PAGADO = 'pagado',
+  CANCELADO = 'cancelado',
+}
+
 @Entity({ name: 'factura', schema: 'public' }) // Esquema explícito
 export class Factura {
   @PrimaryGeneratedColumn()
@@ -34,6 +41,14 @@ export class Factura {
   })
   @JoinColumn({ name: 'clienteId' }) // Esta línea es para que la columna se llame 'clienteId'
   cliente: Client;
+
+  // Columna de estado con tipo enum
+  @Column({
+    type: 'enum',
+    enum: EstadoFactura,
+    default: EstadoFactura.PENDIENTE, // Estado por defecto
+  })
+  estado: EstadoFactura;
 
   // Relación con pagos
   @OneToMany(() => Pago, (pago) => pago.factura)

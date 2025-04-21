@@ -30,6 +30,14 @@ export class Client {
   @Column()
   telefono: string;
 
+  // Nuevo campo: password
+  @Column()
+  password: string; // Campo para la contraseña del cliente
+
+  // Nuevo campo: rol con valor por defecto 'user'
+  @Column({ default: 'user' })
+  rol: string; // Campo para el rol del cliente
+
   @OneToMany(() => Factura, (factura) => factura.cliente)
   facturas: Factura[];
 

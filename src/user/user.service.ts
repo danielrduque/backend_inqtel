@@ -1,26 +1,53 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from './entities/client.entity';
 import { CreateClientDto } from './dto/create-client.dto';
+import { Plan } from '../plan/entities/plan.entity'; // Asegúrate de importar Plan
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(Client)
     private clientRepository: Repository<Client>,
+    @InjectRepository(Plan) // Necesitamos también inyectar el repositorio de Plan
+    private planRepository: Repository<Plan>,
   ) {}
 
   // Crear un cliente
-  create(createClientDto: CreateClientDto): Promise<Client> {
-    const nuevoCliente = this.clientRepository.create(createClientDto);
-    return this.clientRepository.save(nuevoCliente);
+  async create(createClientDto: CreateClientDto): Promise<Client> {
+    const cliente = new Client();
+    cliente.nombre = createClientDto.nombre;
+    cliente.tipoDocumento = createClientDto.tipoDocumento;
+    cliente.numeroDocumento = createClientDto.numeroDocumento;
+    cliente.email = createClientDto.email;
+    cliente.telefono = createClientDto.telefono;
+    cliente.password = createClientDto.password;
+    cliente.rol = createClientDto.rol || 'user'; // Asignamos 'user' como rol por defecto
+
+    // Aquí buscamos si el planId enviado existe
+    if (createClientDto.planId) {
+      const plan = await this.planRepository.findOne({
+        where: { id: createClientDto.planId },
+      });
+
+      if (!plan) {
+        throw new NotFoundException(
+          `El plan con id ${createClientDto.planId} no fue encontrado.`,
+        );
+      }
+
+      cliente.plan = plan; // Asignamos el objeto Plan encontrado al cliente
+    }
+
+    return this.clientRepository.save(cliente);
   }
 
   // Buscar cliente por ID
   async findOne(id: number): Promise<Client | null> {
     return this.clientRepository.findOne({
       where: { id },
+      relations: ['plan'], // Cargamos la relación con el plan
     });
   }
 
@@ -28,6 +55,7 @@ export class UserService {
   async findOneById(clientId: number): Promise<Client | null> {
     return this.clientRepository.findOne({
       where: { id: clientId },
+      relations: ['plan'], // Cargamos la relación con el plan
     });
   }
 

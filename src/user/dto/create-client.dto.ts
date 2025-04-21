@@ -19,6 +19,12 @@ export enum TipoDocumento {
   DOC_EXT = 'docExt',
 }
 
+// Definir el enum para los roles válidos
+export enum Rol {
+  USER = 'user',
+  ADMIN = 'admin',
+}
+
 export class CreateClientDto {
   @IsString()
   nombre: string;
@@ -35,6 +41,15 @@ export class CreateClientDto {
 
   @IsString()
   telefono: string;
+
+  // Campo password - aunque es opcional por ahora
+  @IsString()
+  password: string;
+
+  // Campo rol con valor por defecto 'user'
+  @IsOptional()
+  @IsEnum(Rol)
+  rol: Rol = Rol.USER; // Valor predeterminado
 
   @IsOptional()
   @IsNumber()
