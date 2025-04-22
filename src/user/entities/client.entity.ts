@@ -1,4 +1,3 @@
-// src/user/entities/client.entity.ts
 import {
   Entity,
   Column,
@@ -6,11 +5,13 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  Unique, // Importa Unique
 } from 'typeorm';
 import { Factura } from '../../factura/entities/factura.entity';
 import { Plan } from '../../plan/entities/plan.entity';
 
 @Entity()
+@Unique('UQ_numeroDocumento', ['numeroDocumento']) // Agrega esta línea para que numeroDocumento sea único
 export class Client {
   @PrimaryGeneratedColumn()
   id: number;
@@ -46,3 +47,4 @@ export class Client {
   @JoinColumn({ name: 'planId' }) // El nombre de la columna que se genera en la tabla Client
   plan: Plan;
 }
+
