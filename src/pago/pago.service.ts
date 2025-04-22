@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 import { Pago } from './entities/pago.entity';
 import { CreatePagoDto } from './dto/create-pago.dto';
 import { Factura, EstadoFactura } from '../factura/entities/factura.entity';
-import { Client } from '../user/entities/client.entity'; // Asegúrate de importar la entidad Cliente
+import { Client } from '../user/entities/client.entity';
 
 @Injectable()
 export class PagoService {
@@ -21,13 +21,12 @@ export class PagoService {
     private readonly facturaRepository: Repository<Factura>,
 
     @InjectRepository(Client)
-    private readonly clienteRepository: Repository<Client>, // Asegúrate de tener acceso a Cliente
+    private readonly clienteRepository: Repository<Client>,
   ) {}
 
   async crearPago(createPagoDto: CreatePagoDto) {
     const { facturaId, monto } = createPagoDto;
 
-    // Buscar la factura con el cliente relacionado
     const factura = await this.facturaRepository.findOne({
       where: { id: facturaId },
       relations: ['cliente'],
@@ -36,46 +35,59 @@ export class PagoService {
       throw new NotFoundException('Factura no encontrada');
     }
 
-    // Verificar si la factura ya está pagada
     if (factura.estado === EstadoFactura.PAGADO) {
       throw new BadRequestException('La factura ya ha sido pagada');
     }
 
-    // Crear el nuevo pago
+    const fechaPago = new Date();
+
     const nuevoPago = this.pagoRepository.create({
       factura,
       monto,
-      fechaPago: new Date(),
+      fechaPago,
     });
 
     await this.pagoRepository.save(nuevoPago);
 
-    // Cambiar el estado de la factura a 'pagado'
     factura.estado = EstadoFactura.PAGADO;
     await this.facturaRepository.save(factura);
 
-    // Generar una nueva factura para el siguiente mes
-    const siguienteMes = new Date();
-    siguienteMes.setMonth(siguienteMes.getMonth() + 1); // Sumar un mes a la fecha actual
-
-    // Asegurarse de que la nueva factura tenga la información correcta
     if (!factura.cliente) {
       throw new BadRequestException(
         'El cliente asociado a la factura no existe',
       );
     }
 
-    // Crear una nueva factura con el concepto "servicio de internet"
+    // ========== SECCIÓN CORREGIDA ==========
+    // Crear la nueva factura usando UTC
+    const fechaBase = new Date(factura.fecha);
+    const diaOriginalUTC = fechaBase.getUTCDate();
+    const mesOriginalUTC = fechaBase.getUTCMonth();
+
+    // Sumar 1 mes en UTC
+    fechaBase.setUTCMonth(mesOriginalUTC + 1);
+
+    // Ajustar día si el mes siguiente no lo tiene
+    if (fechaBase.getUTCDate() !== diaOriginalUTC) {
+      fechaBase.setUTCDate(0); // Retrocede al último día del mes anterior
+    }
+
+    // Forzar hora a 00:00:00 UTC
+    fechaBase.setUTCHours(0, 0, 0, 0);
+    const fechaLimite = new Date(fechaBase);
+
+    // Convertir a ISO String para almacenamiento consistente
     const nuevaFactura = this.facturaRepository.create({
-      cliente: factura.cliente, // Mantener el mismo cliente
-      concepto: 'servicio de internet', // Asignar concepto fijo
-      fecha: new Date(), // Usar la fecha actual
-      fechaLimite: siguienteMes, // La nueva factura tendrá un límite en el siguiente mes
-      valor: factura.valor, // Usar el valor de la factura original
-      estado: EstadoFactura.PENDIENTE, // La nueva factura será pendiente
+      cliente: factura.cliente,
+      concepto: 'servicio de internet',
+      fecha: fechaBase.toISOString(),
+      fechaLimite: fechaLimite.toISOString(),
+      valor: factura.valor,
+      estado: EstadoFactura.PENDIENTE,
     });
 
     await this.facturaRepository.save(nuevaFactura);
+    // ========== FIN DE SECCIÓN CORREGIDA ==========
 
     return {
       mensaje:
