@@ -59,24 +59,39 @@ export class PagoService {
     }
 
     // ========== SECCIÓN CORREGIDA ==========
-    // Crear la nueva factura usando UTC
+    // Crear la nueva factura con las fechas ajustadas
     const fechaBase = new Date(factura.fecha);
-    const diaOriginalUTC = fechaBase.getUTCDate();
-    const mesOriginalUTC = fechaBase.getUTCMonth();
+    const diaOriginal = fechaBase.getDate(); // Día de la factura original
+    const mesOriginal = fechaBase.getMonth(); // Mes de la factura original
 
-    // Sumar 1 mes en UTC
-    fechaBase.setUTCMonth(mesOriginalUTC + 1);
+    // Sumar un mes a la fecha
+    fechaBase.setMonth(mesOriginal + 1);
 
-    // Ajustar día si el mes siguiente no lo tiene
-    if (fechaBase.getUTCDate() !== diaOriginalUTC) {
-      fechaBase.setUTCDate(0); // Retrocede al último día del mes anterior
+    // Obtener el último día del mes siguiente
+    const ultimoDiaDelMesSiguiente = new Date(
+      fechaBase.getFullYear(),
+      fechaBase.getMonth() + 1,
+      0, // Esto nos da el último día del mes siguiente
+    );
+    const ultimoDia = ultimoDiaDelMesSiguiente.getDate();
+
+    // Ajustar la fecha: Si el día original es mayor que el último día del mes siguiente,
+    // ajustamos al último día de ese mes.
+    if (diaOriginal > ultimoDia) {
+      fechaBase.setDate(ultimoDia); // Ajuste al último día del mes siguiente
+    } else {
+      fechaBase.setDate(diaOriginal); // Mantener el mismo día
     }
 
-    // Forzar hora a 00:00:00 UTC
-    fechaBase.setUTCHours(0, 0, 0, 0);
+    // Establecer la fecha límite al último día del mes siguiente
     const fechaLimite = new Date(fechaBase);
+    fechaLimite.setMonth(fechaBase.getMonth() + 1);
 
-    // Convertir a ISO String para almacenamiento consistente
+    // Forzar las horas a 00:00:00 para evitar problemas de horas
+    fechaBase.setHours(0, 0, 0, 0);
+    fechaLimite.setHours(0, 0, 0, 0);
+
+    // Crear la nueva factura con la nueva fecha y fecha límite
     const nuevaFactura = this.facturaRepository.create({
       cliente: factura.cliente,
       concepto: 'servicio de internet',

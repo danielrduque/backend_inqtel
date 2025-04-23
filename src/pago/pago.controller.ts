@@ -9,6 +9,7 @@ export class PagoController {
 
   @Post()
   async crearPago(@Body() createPagoDto: CreatePagoDto) {
+    console.log('Solicitud de pago recibida:', createPagoDto); // Agregar log
     return this.pagoService.crearPago(createPagoDto);
   }
 }

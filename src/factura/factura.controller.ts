@@ -15,16 +15,11 @@ export class FacturaController {
   @Get('buscar/:clienteId')
   async findByClienteId(
     @Param('clienteId') clienteId: number,
-  ): Promise<Factura | { encontrado: boolean }> {
-    const factura = await this.facturaService.findByClienteId(clienteId);
-    if (factura.length > 0) {
-      return factura[0];
-    } else {
-      return { encontrado: false };
-    }
+  ): Promise<Factura | { encontrado: false }> {
+    return this.facturaService.findByClienteId(clienteId);
   }
 
-  // Nuevo endpoint para buscar por número de documento
+  // Endpoint para buscar la última factura pendiente por número de documento
   @Get('consulta/:numeroDocumento')
   async findByNumeroDocumento(
     @Param('numeroDocumento') numeroDocumento: string,

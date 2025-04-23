@@ -2,9 +2,19 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Factura } from './entities/factura.entity';
+import { Factura, EstadoFactura } from './entities/factura.entity';
 import { CreateFacturaDto } from './dto/create-factura.dto';
-import { UserService } from '../user/user.service'; // Importamos el servicio UserService
+import { UserService } from '../user/user.service';
+
+type DatosFacturaDTO =
+  | {
+      id: number; // <- agregado
+      nombre: string;
+      plan: string;
+      precio: number;
+      fechaLimite: Date;
+    }
+  | { encontrado: false };
 
 @Injectable()
 export class FacturaService {
@@ -14,7 +24,6 @@ export class FacturaService {
     private userService: UserService,
   ) {}
 
-  // Crear factura
   async create(createFacturaDto: CreateFacturaDto): Promise<Factura> {
     const cliente = await this.userService.findOne(createFacturaDto.clienteId);
 
@@ -30,16 +39,24 @@ export class FacturaService {
     return this.facturaRepository.save(nuevaFactura);
   }
 
-  // Buscar facturas por clienteId
-  async findByClienteId(clienteId: number): Promise<Factura[]> {
-    return this.facturaRepository.find({
-      where: { cliente: { id: clienteId } },
+  async findByClienteId(
+    clienteId: number,
+  ): Promise<Factura | { encontrado: false }> {
+    const facturaPendiente = await this.facturaRepository.findOne({
+      where: {
+        cliente: { id: clienteId },
+        estado: EstadoFactura.PENDIENTE,
+      },
       relations: ['cliente', 'cliente.plan'],
+      order: { fechaLimite: 'DESC' },
     });
+
+    return facturaPendiente || { encontrado: false };
   }
 
-  // Buscar factura por numeroDocumento del cliente
-  async findByNumeroDocumento(numeroDocumento: string): Promise<any> {
+  async findByNumeroDocumento(
+    numeroDocumento: string,
+  ): Promise<DatosFacturaDTO> {
     const cliente =
       await this.userService.findByNumeroDocumento(numeroDocumento);
 
@@ -47,18 +64,21 @@ export class FacturaService {
       return { encontrado: false };
     }
 
-    const facturas = await this.facturaRepository.find({
-      where: { cliente: { id: cliente.id } },
+    const factura = await this.facturaRepository.findOne({
+      where: {
+        cliente: { id: cliente.id },
+        estado: EstadoFactura.PENDIENTE,
+      },
       relations: ['cliente', 'cliente.plan'],
+      order: { fechaLimite: 'DESC' },
     });
 
-    if (facturas.length === 0) {
+    if (!factura) {
       return { encontrado: false };
     }
 
-    const factura = facturas[0];
-
     return {
+      id: factura.id, // <- agregado aquí
       nombre: factura.cliente.nombre,
       plan: factura.cliente.plan.nombre,
       precio: factura.valor,
