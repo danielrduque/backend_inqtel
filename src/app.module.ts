@@ -4,6 +4,7 @@ import { FacturaModule } from './factura/factura.module';
 import { PlanModule } from './plan/plan.module';
 import { UserModule } from './user/user.module'; // Importa el módulo de Usuario (con Client)
 import { PagoModule } from './pago/pago.module'; // Asegúrate de importar PagoModule aquí
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { PagoModule } from './pago/pago.module'; // Asegúrate de importar PagoM
     FacturaModule,
     PlanModule,
     UserModule, // Aquí lo agregas para que el Client esté disponible
-    PagoModule, // Agregado PagoModule
+    PagoModule,
+    AuthModule, // Agregado PagoModule
   ],
 })
 export class AppModule {}

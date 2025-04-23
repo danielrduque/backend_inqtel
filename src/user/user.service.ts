@@ -3,14 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from './entities/client.entity';
 import { CreateClientDto } from './dto/create-client.dto';
-import { Plan } from '../plan/entities/plan.entity'; // Asegúrate de importar Plan
+import { Plan } from '../plan/entities/plan.entity';
+import * as bcrypt from 'bcrypt'; // Importamos bcrypt para hashear la contraseña
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(Client)
     private clientRepository: Repository<Client>,
-    @InjectRepository(Plan) // Necesitamos también inyectar el repositorio de Plan
+    @InjectRepository(Plan)
     private planRepository: Repository<Plan>,
   ) {}
 
@@ -22,8 +23,11 @@ export class UserService {
     cliente.numeroDocumento = createClientDto.numeroDocumento;
     cliente.email = createClientDto.email;
     cliente.telefono = createClientDto.telefono;
-    cliente.password = createClientDto.password;
     cliente.rol = createClientDto.rol || 'user'; // Asignamos 'user' como rol por defecto
+
+    // Hashear la contraseña antes de guardarla
+    const hashedPassword = await bcrypt.hash(createClientDto.password, 10);
+    cliente.password = hashedPassword; // Asignamos la contraseña hasheada
 
     // Aquí buscamos si el planId enviado existe
     if (createClientDto.planId) {
@@ -40,7 +44,7 @@ export class UserService {
       cliente.plan = plan; // Asignamos el objeto Plan encontrado al cliente
     }
 
-    return this.clientRepository.save(cliente);
+    return this.clientRepository.save(cliente); // Guardamos el cliente con la contraseña hasheada
   }
 
   // Buscar cliente por ID
