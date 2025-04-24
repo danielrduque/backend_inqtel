@@ -22,7 +22,7 @@ export class Factura {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ default: 'servicio de internet', nullable: false })
   concepto: string;
 
   @Column('decimal', { precision: 10, scale: 2 })

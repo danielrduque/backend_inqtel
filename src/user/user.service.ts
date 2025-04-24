@@ -1,18 +1,28 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  forwardRef,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from './entities/client.entity';
 import { CreateClientDto } from './dto/create-client.dto';
 import { Plan } from '../plan/entities/plan.entity';
-import * as bcrypt from 'bcrypt'; // Importamos bcrypt para hashear la contraseña
+import { FacturaService } from '../factura/factura.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(Client)
-    private clientRepository: Repository<Client>,
+    private readonly clientRepository: Repository<Client>,
+
     @InjectRepository(Plan)
-    private planRepository: Repository<Plan>,
+    private readonly planRepository: Repository<Plan>,
+
+    @Inject(forwardRef(() => FacturaService)) // ← y aquí
+    private readonly facturaService: FacturaService,
   ) {}
 
   // Crear un cliente
@@ -23,13 +33,11 @@ export class UserService {
     cliente.numeroDocumento = createClientDto.numeroDocumento;
     cliente.email = createClientDto.email;
     cliente.telefono = createClientDto.telefono;
-    cliente.rol = createClientDto.rol || 'user'; // Asignamos 'user' como rol por defecto
+    cliente.rol = createClientDto.rol || 'user';
 
-    // Hashear la contraseña antes de guardarla
     const hashedPassword = await bcrypt.hash(createClientDto.password, 10);
-    cliente.password = hashedPassword; // Asignamos la contraseña hasheada
+    cliente.password = hashedPassword;
 
-    // Aquí buscamos si el planId enviado existe
     if (createClientDto.planId) {
       const plan = await this.planRepository.findOne({
         where: { id: createClientDto.planId },
@@ -41,33 +49,35 @@ export class UserService {
         );
       }
 
-      cliente.plan = plan; // Asignamos el objeto Plan encontrado al cliente
+      cliente.plan = plan;
     }
 
-    return this.clientRepository.save(cliente); // Guardamos el cliente con la contraseña hasheada
+    const clienteGuardado = await this.clientRepository.save(cliente);
+
+    // Crear factura inicial automáticamente
+    await this.facturaService.crearFacturaInicial(clienteGuardado);
+
+    return clienteGuardado;
   }
 
-  // Buscar cliente por ID
   async findOne(id: number): Promise<Client | null> {
     return this.clientRepository.findOne({
       where: { id },
-      relations: ['plan'], // Cargamos la relación con el plan
+      relations: ['plan'],
     });
   }
 
-  // Método auxiliar para factura.service.ts
   async findOneById(clientId: number): Promise<Client | null> {
     return this.clientRepository.findOne({
       where: { id: clientId },
-      relations: ['plan'], // Cargamos la relación con el plan
+      relations: ['plan'],
     });
   }
 
-  // Nuevo método: buscar cliente por número de documento
   async findByNumeroDocumento(numeroDocumento: string): Promise<Client | null> {
     return this.clientRepository.findOne({
       where: { numeroDocumento },
-      relations: ['plan'], // Cargamos el plan para poder acceder al nombre y precio
+      relations: ['plan'],
     });
   }
 }

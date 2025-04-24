@@ -1,18 +1,23 @@
-// src/user/user.module.ts
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Client } from './entities/client.entity';
+import { Plan } from '../plan/entities/plan.entity';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
-import { PlanModule } from '../plan/plan.module'; // Importa PlanModule
+import { FacturaModule } from '../factura/factura.module';
+import { PagoModule } from '../pago/pago.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Client]), // Define la entidad Client para este módulo
-    forwardRef(() => PlanModule), // Usa forwardRef para evitar la dependencia circular
+    TypeOrmModule.forFeature([Client, Plan]),
+    forwardRef(() => FacturaModule),
+    forwardRef(() => PagoModule), // Si existe dependencia circular
   ],
   providers: [UserService],
   controllers: [UserController],
-  exports: [UserService, TypeOrmModule], // Exporta el servicio y TypeOrmModule para que el repositorio de Client sea accesible en otros módulos
+  exports: [
+    UserService,
+    TypeOrmModule.forFeature([Client]), // Exportamos el repositorio
+  ],
 })
 export class UserModule {}
