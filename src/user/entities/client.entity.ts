@@ -29,6 +29,9 @@ export class Client {
   email: string;
 
   @Column()
+  estado: string;
+
+  @Column()
   telefono: string;
 
   // Nuevo campo: password
@@ -47,4 +50,3 @@ export class Client {
   @JoinColumn({ name: 'planId' }) // El nombre de la columna que se genera en la tabla Client
   plan: Plan;
 }
-
