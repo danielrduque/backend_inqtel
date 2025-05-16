@@ -6,6 +6,7 @@ import { PagoService } from './pago.service';
 import { PagoController } from './pago.controller';
 import { UserModule } from '../user/user.module';
 import { FacturaModule } from '../factura/factura.module';
+import { PdfService } from '../pdf/pdf.service';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { FacturaModule } from '../factura/factura.module';
     forwardRef(() => FacturaModule), // Si FacturaModule también necesita PagoModule
   ],
   controllers: [PagoController],
-  providers: [PagoService],
+  providers: [PagoService, PdfService],
   exports: [PagoService], // Exportamos el servicio si será usado en otros módulos
 })
 export class PagoModule {}

@@ -10,6 +10,7 @@ import { Pago } from './entities/pago.entity';
 import { CreatePagoDto } from './dto/create-pago.dto';
 import { Factura, EstadoFactura } from '../factura/entities/factura.entity';
 import { Client } from '../user/entities/client.entity';
+import { PdfService } from '../pdf/pdf.service'; // Ajusta la ruta según tu estructura
 
 @Injectable()
 export class PagoService {
@@ -22,6 +23,8 @@ export class PagoService {
 
     @InjectRepository(Client)
     private readonly clienteRepository: Repository<Client>,
+
+    private readonly pdfService: PdfService,
   ) {}
 
   async crearPago(createPagoDto: CreatePagoDto) {
@@ -51,6 +54,18 @@ export class PagoService {
 
     factura.estado = EstadoFactura.PAGADO;
     await this.facturaRepository.save(factura);
+
+    // Generar el PDF de la factura pagada
+    const nombreArchivoPdf = await this.pdfService.generarFacturaPDF({
+      cliente: factura.cliente.nombre,
+      documento: factura.cliente.numeroDocumento,
+      plan: factura.cliente.plan?.nombre || 'N/A',
+      monto: factura.valor,
+      fecha: factura.fecha.toISOString().split('T')[0], // Solo fecha sin hora
+      estado: factura.estado,
+      facturaId: factura.id,
+    });
+    console.log('PDF generado:', nombreArchivoPdf);
 
     if (!factura.cliente) {
       throw new BadRequestException(

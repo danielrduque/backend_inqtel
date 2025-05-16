@@ -18,6 +18,12 @@ type DatosFacturaDTO =
 
 @Injectable()
 export class FacturaService {
+  async findById(id: number): Promise<Factura | null> {
+    return this.facturaRepository.findOne({
+      where: { id },
+      relations: ['cliente', 'cliente.plan'],
+    });
+  }
   constructor(
     @InjectRepository(Factura)
     private readonly facturaRepository: Repository<Factura>,
