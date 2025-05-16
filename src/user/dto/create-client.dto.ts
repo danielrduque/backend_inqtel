@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsEnum,
 } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 // Definir el enum para los tipos de documento válidos
 export enum TipoDocumento {
@@ -26,31 +27,54 @@ export enum Rol {
 }
 
 export class CreateClientDto {
+  @ApiProperty({
+    description: 'Nombre completo del cliente',
+    example: 'Juan Pérez',
+  })
   @IsString()
   nombre: string;
 
-  // Validar que el tipoDocumento sea uno de los valores definidos en el enum
+  @ApiProperty({
+    description: 'Tipo de documento',
+    enum: TipoDocumento,
+    example: TipoDocumento.CEDULA,
+  })
   @IsEnum(TipoDocumento)
   tipoDocumento: TipoDocumento;
 
+  @ApiProperty({ description: 'Número del documento', example: '1234567890' })
   @IsString()
   numeroDocumento: string;
 
+  @ApiProperty({
+    description: 'Correo electrónico del cliente',
+    example: 'juan.perez@example.com',
+  })
   @IsEmail()
   email: string;
 
+  @ApiProperty({
+    description: 'Teléfono de contacto',
+    example: '+593987654321',
+  })
   @IsString()
   telefono: string;
 
-  // Campo password - aunque es opcional por ahora
+  @ApiProperty({ description: 'Contraseña para acceso', example: 'MiPass1234' })
   @IsString()
   password: string;
 
-  // Campo rol con valor por defecto 'user'
+  @ApiPropertyOptional({
+    description: 'Rol del usuario',
+    enum: Rol,
+    example: Rol.USER,
+    default: Rol.USER,
+  })
   @IsOptional()
   @IsEnum(Rol)
-  rol: Rol = Rol.USER; // Valor predeterminado
+  rol: Rol = Rol.USER;
 
+  @ApiPropertyOptional({ description: 'ID del plan asignado', example: 1 })
   @IsOptional()
   @IsNumber()
   planId?: number;

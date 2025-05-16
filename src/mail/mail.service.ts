@@ -14,10 +14,17 @@ export class MailService {
       port: 587,
       secure: false,
       auth: {
-        user: 'contacinqtel@gmail.com',
-        pass: 'tmguhtqcjmtybmfl', // Asegúrate de que esta contraseña sea correcta
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS, // Asegúrate de que esta contraseña sea correcta
       },
     }) as Transporter;
+    this.transporter.verify((error) => {
+      if (error) {
+        console.error('Error de conexión SMTP:', error);
+      } else {
+        console.log('Conectado a SMTP de Gmail correctamente');
+      }
+    });
   }
 
   async sendContactEmail(
@@ -27,7 +34,7 @@ export class MailService {
   ): Promise<void> {
     const mailOptions: Mail.Options = {
       from: `"${name}" <${email}>`,
-      to: 'contacinqtel@gmail.com',
+      to: process.env.MAIL_USER,
       subject: 'Nuevo mensaje de contacto',
       text: message,
       html: `

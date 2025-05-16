@@ -28,7 +28,7 @@ export class Client {
   @Column()
   email: string;
 
-  @Column()
+  @Column({ default: 'activo' })
   estado: string;
 
   @Column()
