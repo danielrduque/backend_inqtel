@@ -66,10 +66,6 @@ export class CreateClientDto {
   @IsString()
   telefono: string;
 
-  @ApiProperty({ description: 'Contraseña para acceso', example: 'MiPass1234' })
-  @IsString()
-  password: string;
-
   @ApiPropertyOptional({
     description: 'Rol del usuario',
     enum: Rol,

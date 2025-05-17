@@ -21,7 +21,7 @@ export class UserService {
     @InjectRepository(Plan)
     private readonly planRepository: Repository<Plan>,
 
-    @Inject(forwardRef(() => FacturaService)) // ← y aquí
+    @Inject(forwardRef(() => FacturaService))
     private readonly facturaService: FacturaService,
   ) {}
 
@@ -36,7 +36,10 @@ export class UserService {
     cliente.rol = createClientDto.rol || 'user';
     cliente.direccion = createClientDto.direccion;
 
-    const hashedPassword = await bcrypt.hash(createClientDto.password, 10);
+    const hashedPassword = await bcrypt.hash(
+      createClientDto.numeroDocumento,
+      10,
+    );
     cliente.password = hashedPassword;
 
     if (createClientDto.planId) {
@@ -55,10 +58,68 @@ export class UserService {
 
     const clienteGuardado = await this.clientRepository.save(cliente);
 
-    // Crear factura inicial automáticamente
     await this.facturaService.crearFacturaInicial(clienteGuardado);
 
     return clienteGuardado;
+  }
+
+  async update(
+    id: number,
+    updateClientDto: Partial<CreateClientDto>,
+  ): Promise<Client> {
+    const cliente = await this.clientRepository.findOne({ where: { id } });
+    if (!cliente) {
+      throw new NotFoundException(`Cliente con id ${id} no encontrado`);
+    }
+
+    if (!updateClientDto) {
+      throw new NotFoundException(`Datos para actualizar no proporcionados`);
+    }
+
+    if (updateClientDto.nombre !== undefined)
+      cliente.nombre = updateClientDto.nombre;
+    if (updateClientDto.tipoDocumento !== undefined)
+      cliente.tipoDocumento = updateClientDto.tipoDocumento;
+
+    // Si cambió el numeroDocumento, actualizar también la contraseña
+    if (updateClientDto.numeroDocumento !== undefined) {
+      cliente.numeroDocumento = updateClientDto.numeroDocumento;
+      cliente.password = await bcrypt.hash(updateClientDto.numeroDocumento, 10);
+    }
+
+    if (updateClientDto.email !== undefined)
+      cliente.email = updateClientDto.email;
+    if (updateClientDto.telefono !== undefined)
+      cliente.telefono = updateClientDto.telefono;
+    if (updateClientDto.rol !== undefined) cliente.rol = updateClientDto.rol;
+    if (updateClientDto.direccion !== undefined)
+      cliente.direccion = updateClientDto.direccion;
+
+    if (updateClientDto.planId !== undefined) {
+      const plan = await this.planRepository.findOne({
+        where: { id: updateClientDto.planId },
+      });
+      if (!plan) {
+        throw new NotFoundException(
+          `Plan con id ${updateClientDto.planId} no encontrado`,
+        );
+      }
+      cliente.plan = plan;
+    }
+
+    // Ya no revisamos updateClientDto.password porque no existe
+    // Eliminamos esta parte:
+    // if (updateClientDto.password !== undefined) {
+    //   cliente.password = await bcrypt.hash(updateClientDto.password, 10);
+    // }
+
+    return this.clientRepository.save(cliente);
+  }
+
+  async findAll(): Promise<Client[]> {
+    return this.clientRepository.find({
+      relations: ['plan'],
+    });
   }
 
   async findOne(id: number): Promise<Client | null> {
