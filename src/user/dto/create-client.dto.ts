@@ -1,4 +1,3 @@
-// src/user/dto/create-client.dto.ts
 import {
   IsString,
   IsEmail,
@@ -52,6 +51,13 @@ export class CreateClientDto {
   })
   @IsEmail()
   email: string;
+
+  @ApiProperty({
+    description: 'Dirección de residencia del cliente',
+    example: 'Calle 123 y Avenida Siempre Viva',
+  })
+  @IsString()
+  direccion: string; // 👈 Campo agregado
 
   @ApiProperty({
     description: 'Teléfono de contacto',

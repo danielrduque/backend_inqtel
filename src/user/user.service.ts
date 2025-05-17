@@ -34,6 +34,7 @@ export class UserService {
     cliente.email = createClientDto.email;
     cliente.telefono = createClientDto.telefono;
     cliente.rol = createClientDto.rol || 'user';
+    cliente.direccion = createClientDto.direccion;
 
     const hashedPassword = await bcrypt.hash(createClientDto.password, 10);
     cliente.password = hashedPassword;

@@ -10,7 +10,8 @@ import { Pago } from './entities/pago.entity';
 import { CreatePagoDto } from './dto/create-pago.dto';
 import { Factura, EstadoFactura } from '../factura/entities/factura.entity';
 import { Client } from '../user/entities/client.entity';
-import { PdfService } from '../pdf/pdf.service'; // Ajusta la ruta según tu estructura
+import { PdfService } from '../pdf/pdf.service';
+import { MailService } from '../mail/mail.service'; // Importa tu MailService personalizado
 
 @Injectable()
 export class PagoService {
@@ -25,6 +26,8 @@ export class PagoService {
     private readonly clienteRepository: Repository<Client>,
 
     private readonly pdfService: PdfService,
+
+    private readonly mailService: MailService, // Inyectamos tu MailService
   ) {}
 
   async crearPago(createPagoDto: CreatePagoDto) {
@@ -55,58 +58,68 @@ export class PagoService {
     factura.estado = EstadoFactura.PAGADO;
     await this.facturaRepository.save(factura);
 
-    // Generar el PDF de la factura pagada
-    const nombreArchivoPdf = await this.pdfService.generarFacturaPDF({
-      cliente: factura.cliente.nombre,
-      documento: factura.cliente.numeroDocumento,
-      plan: factura.cliente.plan?.nombre || 'N/A',
-      monto: factura.valor,
-      fecha: factura.fecha.toISOString().split('T')[0], // Solo fecha sin hora
-      estado: factura.estado,
-      facturaId: factura.id,
-    });
-    console.log('PDF generado:', nombreArchivoPdf);
-
     if (!factura.cliente) {
       throw new BadRequestException(
         'El cliente asociado a la factura no existe',
       );
     }
 
-    // ========== SECCIÓN CORREGIDA ==========
-    // Crear la nueva factura con las fechas ajustadas
-    const fechaBase = new Date(factura.fecha);
-    const diaOriginal = fechaBase.getDate(); // Día de la factura original
-    const mesOriginal = fechaBase.getMonth(); // Mes de la factura original
+    // Convertir factura.fecha a Date si no lo es
+    const fechaFactura =
+      factura.fecha instanceof Date ? factura.fecha : new Date(factura.fecha);
+    const fechaFormateada = fechaFactura.toISOString().split('T')[0];
 
-    // Sumar un mes a la fecha
+    // Generar el PDF de la factura pagada
+    const nombreArchivoPdf = await this.pdfService.generarFacturaPDF({
+      cliente: factura.cliente.nombre,
+      documento: factura.cliente.numeroDocumento,
+      plan: factura.cliente.plan?.nombre || 'N/A',
+      monto: factura.valor,
+      fecha: fechaFormateada,
+      estado: factura.estado,
+      facturaId: factura.id,
+    });
+    console.log('PDF generado:', nombreArchivoPdf);
+
+    // Enviar el PDF por correo electrónico usando tu MailService
+    try {
+      await this.mailService.sendInvoiceEmail(
+        factura.cliente.email,
+        `Factura pagada - ID: ${factura.id}`,
+        `Estimado/a ${factura.cliente.nombre},\n\nGracias por su pago. Adjuntamos la factura correspondiente.\n\nSaludos.`,
+        `Factura_${factura.id}.pdf`,
+      );
+      console.log(`Correo enviado a ${factura.cliente.email}`);
+    } catch (error) {
+      console.error('Error al enviar correo:', error);
+    }
+
+    // ======= SECCIÓN CORREGIDA PARA CREAR NUEVA FACTURA =======
+    const fechaBase = new Date(factura.fecha);
+    const diaOriginal = fechaBase.getDate();
+    const mesOriginal = fechaBase.getMonth();
+
     fechaBase.setMonth(mesOriginal + 1);
 
-    // Obtener el último día del mes siguiente
     const ultimoDiaDelMesSiguiente = new Date(
       fechaBase.getFullYear(),
       fechaBase.getMonth() + 1,
-      0, // Esto nos da el último día del mes siguiente
+      0,
     );
     const ultimoDia = ultimoDiaDelMesSiguiente.getDate();
 
-    // Ajustar la fecha: Si el día original es mayor que el último día del mes siguiente,
-    // ajustamos al último día de ese mes.
     if (diaOriginal > ultimoDia) {
-      fechaBase.setDate(ultimoDia); // Ajuste al último día del mes siguiente
+      fechaBase.setDate(ultimoDia);
     } else {
-      fechaBase.setDate(diaOriginal); // Mantener el mismo día
+      fechaBase.setDate(diaOriginal);
     }
 
-    // Establecer la fecha límite al último día del mes siguiente
     const fechaLimite = new Date(fechaBase);
     fechaLimite.setMonth(fechaBase.getMonth() + 1);
 
-    // Forzar las horas a 00:00:00 para evitar problemas de horas
     fechaBase.setHours(0, 0, 0, 0);
     fechaLimite.setHours(0, 0, 0, 0);
 
-    // Crear la nueva factura con la nueva fecha y fecha límite
     const nuevaFactura = this.facturaRepository.create({
       cliente: factura.cliente,
       concepto: 'servicio de internet',
@@ -117,11 +130,11 @@ export class PagoService {
     });
 
     await this.facturaRepository.save(nuevaFactura);
-    // ========== FIN DE SECCIÓN CORREGIDA ==========
+    // ======= FIN SECCIÓN =======
 
     return {
       mensaje:
-        'Pago registrado y factura actualizada. Nueva factura generada para el siguiente mes.',
+        'Pago registrado, factura actualizada y factura enviada por correo. Nueva factura generada para el siguiente mes.',
       pago: nuevoPago,
       nuevaFactura,
     };

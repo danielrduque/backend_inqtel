@@ -51,7 +51,10 @@ export class PdfService {
       data.estado.toLowerCase() === 'pendiente' ? '#ff0000' : '#66FF33 '; // rojo o verde
 
     // Fecha (texto negro)
-    doc.fontSize(9).fillColor('black').text(`Fecha: ${data.fecha}`, estadoX, 100);
+    doc
+      .fontSize(9)
+      .fillColor('black')
+      .text(`Fecha: ${data.fecha}`, estadoX, 100);
 
     // Fondo coloreado para "Estado" que va hasta la línea del marco (x=555)
     const estadoWidth = 555 - estadoX; // ancho desde x=300 hasta x=555
@@ -64,7 +67,10 @@ export class PdfService {
       .restore();
 
     // Texto "Estado" encima del fondo en negro
-    doc.fillColor('black').fontSize(9).text(`Estado: ${data.estado}`, estadoX, estadoY);
+    doc
+      .fillColor('black')
+      .fontSize(9)
+      .text(`Estado: ${data.estado}`, estadoX, estadoY);
 
     // Forma de Pago (texto negro)
     doc.text('Forma de Pago: Contado', estadoX, 130);

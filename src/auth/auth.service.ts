@@ -55,6 +55,7 @@ export class AuthService {
     if (!isMatch) throw new UnauthorizedException('Credenciales incorrectas');
 
     // Excluir la contraseña del objeto retornado
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...result } = client;
     return result;
   }

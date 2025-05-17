@@ -34,6 +34,9 @@ export class Client {
   @Column()
   telefono: string;
 
+  @Column()
+  direccion: string; //
+
   // Nuevo campo: password
   @Column()
   password: string; // Campo para la contraseña del cliente
