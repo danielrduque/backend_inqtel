@@ -34,12 +34,12 @@ export class Factura {
   @Column({ type: 'date', nullable: true })
   fechaLimite: Date;
 
-  // Relación con Cliente
   @ManyToOne(() => Client, (client) => client.facturas, {
     eager: true,
-    nullable: false, // Asegura que no sea null
+    nullable: false,
+    onDelete: 'CASCADE', // << Aquí
   })
-  @JoinColumn({ name: 'clienteId' }) // Esta línea es para que la columna se llame 'clienteId'
+  @JoinColumn({ name: 'clienteId' })
   cliente: Client;
 
   // Columna de estado con tipo enum
@@ -51,6 +51,9 @@ export class Factura {
   estado: EstadoFactura;
 
   // Relación con pagos
-  @OneToMany(() => Pago, (pago) => pago.factura)
+  @OneToMany(() => Pago, (pago) => pago.factura, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   pagos: Pago[];
 }

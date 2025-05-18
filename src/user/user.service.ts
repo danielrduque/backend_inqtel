@@ -63,6 +63,14 @@ export class UserService {
     return clienteGuardado;
   }
 
+  async remove(id: number): Promise<void> {
+    const cliente = await this.clientRepository.findOne({ where: { id } });
+    if (!cliente) {
+      throw new NotFoundException('Cliente no encontrado');
+    }
+    await this.clientRepository.remove(cliente);
+  }
+
   async update(
     id: number,
     updateClientDto: Partial<CreateClientDto>,

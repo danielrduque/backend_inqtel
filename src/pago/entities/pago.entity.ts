@@ -19,7 +19,9 @@ export class Pago {
   @Column({ type: 'date' })
   fechaPago: Date;
 
-  @ManyToOne(() => Factura, (factura) => factura.pagos)
+  @ManyToOne(() => Factura, (factura) => factura.pagos, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'facturaId' })
   factura: Factura;
 

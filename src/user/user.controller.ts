@@ -6,6 +6,7 @@ import {
   Get,
   Param,
   Patch,
+  Delete,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateClientDto } from './dto/create-client.dto';
@@ -19,6 +20,14 @@ export class UserController {
   @Post()
   async create(@Body() createClientDto: CreateClientDto): Promise<Client> {
     return this.userService.create(createClientDto);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string): Promise<{ message: string }> {
+    await this.userService.remove(Number(id));
+    return {
+      message: 'Cliente y sus facturas y pagos eliminados correctamente',
+    };
   }
 
   @Get()

@@ -45,7 +45,10 @@ export class Client {
   @Column({ default: 'user' })
   rol: string; // Campo para el rol del cliente
 
-  @OneToMany(() => Factura, (factura) => factura.cliente)
+  @OneToMany(() => Factura, (factura) => factura.cliente, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   facturas: Factura[];
 
   // Relación con Plan
