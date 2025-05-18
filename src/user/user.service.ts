@@ -35,6 +35,7 @@ export class UserService {
     cliente.telefono = createClientDto.telefono;
     cliente.rol = createClientDto.rol || 'user';
     cliente.direccion = createClientDto.direccion;
+    cliente.estado = createClientDto.estado || 'activo'; // Valor por defecto si no viene
 
     const hashedPassword = await bcrypt.hash(
       createClientDto.numeroDocumento,
@@ -102,6 +103,9 @@ export class UserService {
     if (updateClientDto.rol !== undefined) cliente.rol = updateClientDto.rol;
     if (updateClientDto.direccion !== undefined)
       cliente.direccion = updateClientDto.direccion;
+    if (updateClientDto.estado !== undefined) {
+      cliente.estado = updateClientDto.estado;
+    }
 
     if (updateClientDto.planId !== undefined) {
       const plan = await this.planRepository.findOne({

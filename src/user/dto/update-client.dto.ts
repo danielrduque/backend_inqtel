@@ -43,4 +43,10 @@ export class UpdateClientDto extends PartialType(CreateClientDto) {
   @IsOptional()
   @IsNumber()
   planId?: number;
+
+  // Aquí agregamos el estado
+  @ApiPropertyOptional({ example: 'activo', description: 'Estado del cliente' })
+  @IsOptional()
+  @IsString()
+  estado?: string;
 }

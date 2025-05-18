@@ -76,6 +76,9 @@ export class CreateClientDto {
   @IsEnum(Rol)
   rol: Rol = Rol.USER;
 
+  @ApiPropertyOptional({ example: 'activo', description: 'Estado del cliente' })
+  estado?: string;
+
   @ApiPropertyOptional({ description: 'ID del plan asignado', example: 1 })
   @IsOptional()
   @IsNumber()
