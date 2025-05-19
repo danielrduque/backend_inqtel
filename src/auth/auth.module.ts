@@ -6,13 +6,21 @@ import { Client } from '../user/entities/client.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from '../auth/jwt/jwt.strategy'; // Importa la estrategia JWT
 import { JwtAuthGuard } from '../auth/jwt/jwt.guard'; // Importa el guard JWT
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot(), // Carga variables de entorno
     TypeOrmModule.forFeature([Client]),
-    JwtModule.register({
-      secret: 'secreto-ultra-seguro', // Cámbialo por env si es necesario
-      signOptions: { expiresIn: '1d' }, // Expiración del token
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1d',
+        },
+      }),
+      inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],

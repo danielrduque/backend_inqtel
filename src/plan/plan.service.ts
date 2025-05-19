@@ -1,9 +1,8 @@
-// src/plan/plan.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Plan } from './entities/plan.entity';
-import { Client } from '../user/entities/client.entity'; // Importa la entidad Client
+import { Client } from '../user/entities/client.entity';
 import { CreatePlanDto } from './dto/create-plan.dto';
 
 @Injectable()
@@ -27,7 +26,7 @@ export class PlanService {
   async findOne(id: number): Promise<Plan> {
     const plan = await this.planRepository.findOne({
       where: { id },
-      relations: ['clientes'], // Cargar los clientes si es necesario
+      relations: ['clientes'],
     });
 
     if (!plan) {
@@ -37,11 +36,10 @@ export class PlanService {
     return plan;
   }
 
-  // Optimizado: obtenemos el cliente con su plan en una sola consulta
   async getClientPlan(clientId: number): Promise<Plan> {
     const client = await this.clientRepository.findOne({
       where: { id: clientId },
-      relations: ['plan'], // Cargar el plan relacionado del cliente
+      relations: ['plan'],
     });
 
     if (!client) {
@@ -54,7 +52,27 @@ export class PlanService {
       );
     }
 
-    // El plan está cargado junto con el cliente, por lo que no es necesario hacer una segunda consulta
     return client.plan;
+  }
+
+  // 🟡 NUEVA FUNCIÓN: actualizar un plan
+  async update(id: number, updateData: Partial<CreatePlanDto>): Promise<Plan> {
+    const plan = await this.planRepository.findOne({ where: { id } });
+
+    if (!plan) {
+      throw new NotFoundException(`Plan with id ${id} not found`);
+    }
+
+    Object.assign(plan, updateData);
+    return this.planRepository.save(plan);
+  }
+
+  // 🔴 NUEVA FUNCIÓN: eliminar un plan
+  async remove(id: number): Promise<void> {
+    const result = await this.planRepository.delete(id);
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`Plan with id ${id} not found`);
+    }
   }
 }

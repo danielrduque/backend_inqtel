@@ -9,16 +9,15 @@ import { Repository } from 'typeorm';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     @InjectRepository(Client)
-    private clientRepository: Repository<Client>, // Inyecta tu repositorio de clientes
+    private clientRepository: Repository<Client>,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // Extrae el JWT del encabezado Authorization
-      secretOrKey: 'secreto-ultra-seguro', // Utiliza el mismo secreto que usas para firmar los JWTs
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: process.env.JWT_SECRET!, // Asegúrate que JWT_SECRET esté definido en el .env
     });
   }
 
-  async validate(payload: any) {
-    // Aquí validas el payload del token (decodificado)
+  async validate(payload: { sub: number; rol: string }) {
     const user = await this.clientRepository.findOne({
       where: { id: payload.sub },
     });
@@ -27,6 +26,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new Error('Usuario no encontrado');
     }
 
-    return user; // Retorna el usuario (o lo que necesites) al guard para usarlo en la solicitud
+    // Retornamos solo los campos necesarios para el contexto de autenticación
+    return {
+      id: user.id,
+      nombre: user.nombre,
+      rol: user.rol,
+    };
   }
 }

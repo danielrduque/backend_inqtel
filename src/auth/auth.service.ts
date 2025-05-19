@@ -12,31 +12,6 @@ export class AuthService {
     private clientRepository: Repository<Client>,
     private jwtService: JwtService,
   ) {}
-
-  // Método para registrar un usuario con la contraseña hasheada
-  async register(userData: {
-    nombre: string;
-    tipoDocumento: string;
-    numeroDocumento: string;
-    email: string;
-    telefono: string;
-    password: string;
-  }) {
-    // Hashear la contraseña antes de guardarla
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
-
-    // Crear un nuevo cliente con la contraseña hasheada
-    const newUser = this.clientRepository.create({
-      ...userData,
-      password: hashedPassword, // Asignamos la contraseña hasheada
-    });
-
-    // Guardar el nuevo cliente en la base de datos
-    await this.clientRepository.save(newUser);
-
-    return newUser;
-  }
-
   // Método para validar al usuario con numeroDocumento y password
   async validateUser(
     numeroDocumento: string,
