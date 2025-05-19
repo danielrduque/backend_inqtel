@@ -5,7 +5,8 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
-  Unique, // Importa Unique
+  Unique,
+  CreateDateColumn, // Importa Unique
 } from 'typeorm';
 import { Factura } from '../../factura/entities/factura.entity';
 import { Plan } from '../../plan/entities/plan.entity';
@@ -44,6 +45,9 @@ export class Client {
   // Nuevo campo: rol con valor por defecto 'user'
   @Column({ default: 'user' })
   rol: string; // Campo para el rol del cliente
+
+  @CreateDateColumn({ name: 'fecha_registro' })
+  fechaRegistro: Date; // Campo para la fecha de registro
 
   @OneToMany(() => Factura, (factura) => factura.cliente, {
     cascade: true,

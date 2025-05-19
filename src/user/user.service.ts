@@ -43,6 +43,8 @@ export class UserService {
     );
     cliente.password = hashedPassword;
 
+    cliente.fechaRegistro = new Date();
+
     if (createClientDto.planId) {
       const plan = await this.planRepository.findOne({
         where: { id: createClientDto.planId },
