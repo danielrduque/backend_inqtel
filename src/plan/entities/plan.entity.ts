@@ -13,6 +13,9 @@ export class Plan {
   @Column('decimal', { precision: 10, scale: 2 })
   precio: number;
 
+  @Column({ type: 'text', nullable: true }) // Nueva columna descripcion
+  descripcion?: string;
+
   @OneToMany(() => Client, (client) => client.plan)
   clientes: Client[];
 }
