@@ -25,6 +25,11 @@ export class FacturaController {
     return this.facturaService.findByClienteId(clienteId);
   }
 
+  @Get('historial/:clienteId')
+  findAllByCliente(@Param('clienteId') clienteId: number): Promise<Factura[]> {
+    return this.facturaService.findAllByClienteId(clienteId);
+  }
+
   // Endpoint para buscar la última factura pendiente por número de documento
   @Get('consulta/:numeroDocumento')
   async findByNumeroDocumento(

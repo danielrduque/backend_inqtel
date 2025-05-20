@@ -70,6 +70,14 @@ export class FacturaService {
     return this.facturaRepository.save(nuevaFactura);
   }
 
+  async findAllByClienteId(clienteId: number): Promise<Factura[]> {
+    return this.facturaRepository.find({
+      where: { cliente: { id: clienteId } },
+      relations: ['cliente', 'cliente.plan', 'pagos'], // 👈 aquí agregamos los pagos
+      order: { fecha: 'DESC' },
+    });
+  }
+
   // Buscar factura pendiente por cliente
   async findByClienteId(
     clienteId: number,
