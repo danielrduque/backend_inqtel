@@ -25,7 +25,7 @@ export class PlanController {
   }
 
   @Get()
-  findAll(): Promise<Plan[]> {
+  findAll(): Promise<any[]> {
     return this.planService.findAll();
   }
 

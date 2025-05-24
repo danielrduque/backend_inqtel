@@ -19,8 +19,18 @@ export class PlanService {
     return await this.planRepository.save(plan);
   }
 
-  async findAll(): Promise<Plan[]> {
-    return this.planRepository.find();
+  async findAll(): Promise<any[]> {
+    const planes = await this.planRepository.find({
+      relations: ['clientes'],
+    });
+
+    return planes.map((plan) => ({
+      id: plan.id,
+      nombre: plan.nombre,
+      descripcion: plan.descripcion,
+      precio: Number(plan.precio),
+      clientCount: plan.clientes?.length || 0,
+    }));
   }
 
   async findOne(id: number): Promise<Plan> {
