@@ -14,7 +14,7 @@ import { Pago } from '../../pago/entities/pago.entity';
 export enum EstadoFactura {
   PENDIENTE = 'pendiente',
   PAGADO = 'pagado',
-  CANCELADO = 'cancelado',
+  ANULADA = 'ANULADA', // <-- agregamos este estado
 }
 
 @Entity({ name: 'factura', schema: 'public' }) // Esquema explícito

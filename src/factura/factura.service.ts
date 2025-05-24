@@ -61,7 +61,7 @@ export class FacturaService {
 
     const nuevaFactura = this.facturaRepository.create({
       cliente: cliente, // Relación con el cliente
-      valor: cliente.plan?.precio ?? 0, // Usamos el precio del plan (mejor que || para evitar errores con 0)
+      valor: cliente.plan.precio, // Usamos el precio del plan (mejor que || para evitar errores con 0)
       estado: EstadoFactura.PENDIENTE,
       fecha: fechaActual,
       fechaLimite: fechaLimite,
@@ -122,7 +122,7 @@ export class FacturaService {
       id: factura.id,
       nombre: factura.cliente.nombre,
       plan: factura.cliente.plan.nombre,
-      precio: factura.valor,
+      precio: factura.cliente.plan.precio,
       fechaLimite: factura.fechaLimite,
     };
   }

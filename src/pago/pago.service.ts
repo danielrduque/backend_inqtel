@@ -68,7 +68,6 @@ export class PagoService {
     const fechaFactura =
       factura.fecha instanceof Date ? factura.fecha : new Date(factura.fecha);
     const fechaFormateada = fechaFactura.toISOString().split('T')[0];
-
     // Generar el PDF de la factura pagada
     const nombreArchivoPdf = await this.pdfService.generarFacturaPDF({
       cliente: factura.cliente.nombre,

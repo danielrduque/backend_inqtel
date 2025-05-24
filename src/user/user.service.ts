@@ -10,6 +10,7 @@ import { Client } from './entities/client.entity';
 import { CreateClientDto } from './dto/create-client.dto';
 import { Plan } from '../plan/entities/plan.entity';
 import { FacturaService } from '../factura/factura.service';
+import { Factura } from 'src/factura/entities/factura.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -20,6 +21,9 @@ export class UserService {
 
     @InjectRepository(Plan)
     private readonly planRepository: Repository<Plan>,
+
+    @InjectRepository(Factura)
+    private facturaRepository: Repository<Factura>, // <-- Inyecta aquí
 
     @Inject(forwardRef(() => FacturaService))
     private readonly facturaService: FacturaService,
@@ -119,6 +123,17 @@ export class UserService {
         );
       }
       cliente.plan = plan;
+
+      // Actualizar el valor de las facturas pendientes
+      await this.facturaRepository
+        .createQueryBuilder()
+        .update(Factura)
+        .set({
+          valor: plan.precio,
+        })
+        .where('clienteId = :clienteId', { clienteId: cliente.id })
+        .andWhere('estado != :estadoPagada', { estadoPagada: 'pagado' }) // solo facturas no pagadas
+        .execute();
     }
 
     // Ya no revisamos updateClientDto.password porque no existe

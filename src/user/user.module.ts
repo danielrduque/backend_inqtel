@@ -6,10 +6,11 @@ import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { FacturaModule } from '../factura/factura.module';
 import { PagoModule } from '../pago/pago.module';
+import { Factura } from 'src/factura/entities/factura.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Client, Plan]),
+    TypeOrmModule.forFeature([Client, Plan, Factura]),
     forwardRef(() => FacturaModule),
     forwardRef(() => PagoModule), // Si existe dependencia circular
   ],
