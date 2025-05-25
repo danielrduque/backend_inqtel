@@ -34,6 +34,8 @@ export class MailService {
     name: string,
     email: string,
     message: string,
+    address: string,
+    phone: number,
   ): Promise<void> {
     const mailOptions: Mail.Options = {
       from: `"${name}" <${email}>`,
@@ -41,11 +43,13 @@ export class MailService {
       subject: 'Nuevo mensaje de contacto',
       text: message,
       html: `
-        <h3>Nuevo mensaje de contacto</h3>
-        <p><strong>Nombre:</strong> ${name}</p>
-        <p><strong>Correo:</strong> ${email}</p>
-        <p><strong>Mensaje:</strong><br/>${message}</p>
-      `,
+  <h3>Nuevo mensaje de contacto</h3>
+  <p><strong>Nombre:</strong> ${name}</p>
+  <p><strong>Correo:</strong> ${email}</p>
+  <p><strong>Teléfono:</strong> ${phone}</p>
+  <p><strong>Dirección:</strong> ${address}</p>
+  <p><strong>Mensaje:</strong><br/>${message}</p>
+`,
     };
 
     try {

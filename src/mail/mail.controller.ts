@@ -8,12 +8,21 @@ export class MailController {
 
   @Post()
   async enviarCorreo(
-    @Body() body: { name: string; email: string; message: string },
+    @Body()
+    body: {
+      name: string;
+      email: string;
+      message: string;
+      address: string;
+      phone: number;
+    },
   ) {
     await this.mailService.sendContactEmail(
       body.name,
       body.email,
       body.message,
+      body.address,
+      body.phone,
     );
     return { message: 'Correo enviado con éxito' };
   }
