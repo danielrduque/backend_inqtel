@@ -12,6 +12,7 @@ import { Factura, EstadoFactura } from '../factura/entities/factura.entity';
 import { Client } from '../user/entities/client.entity';
 import { PdfService } from '../pdf/pdf.service';
 import { MailService } from '../mail/mail.service'; // Importa tu MailService personalizado
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 @Injectable()
 export class PagoService {
@@ -30,6 +31,25 @@ export class PagoService {
     private readonly mailService: MailService, // Inyectamos tu MailService
   ) {}
 
+  async getIngresosMensuales(): Promise<number> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const inicioMes = startOfMonth(new Date());
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const finMes = endOfMonth(new Date());
+
+    const resultado = (await this.pagoRepository
+      .createQueryBuilder('pago')
+      .select('SUM(pago.monto)', 'total')
+      .where('pago.fechaPago BETWEEN :inicio AND :fin', {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        inicio: inicioMes,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        fin: finMes,
+      })
+      .getRawOne()) as { total: string | null };
+
+    return Number(resultado.total) || 0;
+  }
   async crearPago(createPagoDto: CreatePagoDto) {
     const { facturaId, monto } = createPagoDto;
 
