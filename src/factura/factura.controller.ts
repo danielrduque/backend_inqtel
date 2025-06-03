@@ -25,6 +25,12 @@ export class FacturaController {
     return this.facturaService.findByClienteId(clienteId);
   }
 
+  // Agregar este endpoint
+  @Get()
+  findAll(): Promise<Factura[]> {
+    return this.facturaService.findAll();
+  }
+
   @Get('historial/:clienteId')
   findAllByCliente(@Param('clienteId') clienteId: number): Promise<Factura[]> {
     return this.facturaService.findAllByClienteId(clienteId);

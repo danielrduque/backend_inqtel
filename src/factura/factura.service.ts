@@ -32,6 +32,13 @@ export class FacturaService {
     private readonly userService: UserService,
   ) {}
 
+  async findAll(): Promise<Factura[]> {
+    return this.facturaRepository.find({
+      relations: ['cliente', 'cliente.plan', 'pagos'],
+      order: { fecha: 'DESC' },
+    });
+  }
+
   // Crear factura
   async create(createFacturaDto: CreateFacturaDto): Promise<Factura> {
     const cliente = await this.userService.findOne(createFacturaDto.clienteId);
