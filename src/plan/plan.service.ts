@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Plan } from './entities/plan.entity';
 import { Client } from '../user/entities/client.entity';
 import { CreatePlanDto } from './dto/create-plan.dto';
+import { Factura } from 'src/factura/entities/factura.entity';
 
 @Injectable()
 export class PlanService {
@@ -12,6 +13,8 @@ export class PlanService {
     private planRepository: Repository<Plan>,
     @InjectRepository(Client)
     private clientRepository: Repository<Client>,
+    @InjectRepository(Factura)
+    private facturaRepository: Repository<Factura>,
   ) {}
 
   async create(createPlanDto: CreatePlanDto): Promise<Plan> {
@@ -65,6 +68,21 @@ export class PlanService {
     return client.plan;
   }
 
+  async actualizarFacturasPendientes(planId: number, nuevoPrecio: number) {
+    const facturasPendientes = await this.facturaRepository
+      .createQueryBuilder('factura')
+      .innerJoin('factura.cliente', 'cliente')
+      .innerJoin('cliente.plan', 'plan')
+      .where('plan.id = :planId', { planId })
+      .andWhere('factura.estado = :estado', { estado: 'pendiente' }) // o usa el enum si tienes uno
+      .getMany();
+
+    for (const factura of facturasPendientes) {
+      factura.valor = nuevoPrecio;
+      await this.facturaRepository.save(factura);
+    }
+  }
+
   // 🟡 NUEVA FUNCIÓN: actualizar un plan
   async update(id: number, updateData: Partial<CreatePlanDto>): Promise<Plan> {
     const plan = await this.planRepository.findOne({ where: { id } });
@@ -73,8 +91,18 @@ export class PlanService {
       throw new NotFoundException(`Plan with id ${id} not found`);
     }
 
+    const precioAnterior = plan.precio;
+    const nuevoPrecio = updateData.precio;
+
     Object.assign(plan, updateData);
-    return this.planRepository.save(plan);
+    const planActualizado = await this.planRepository.save(plan);
+
+    // Si el precio cambió, actualizar facturas pendientes
+    if (nuevoPrecio && nuevoPrecio !== precioAnterior) {
+      await this.actualizarFacturasPendientes(plan.id, nuevoPrecio);
+    }
+
+    return planActualizado;
   }
 
   // 🔴 NUEVA FUNCIÓN: eliminar un plan
