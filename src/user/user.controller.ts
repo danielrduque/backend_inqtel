@@ -23,6 +23,7 @@ import { Client } from './entities/client.entity';
 import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator'; // Ejemplo si tienes un guard JWT
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('clientes')
 export class UserController {
@@ -32,6 +33,7 @@ export class UserController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createClientDto: CreateClientDto): Promise<Client> {
     return this.userService.create(createClientDto);
@@ -40,6 +42,7 @@ export class UserController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.OK) // O HttpStatus.NO_CONTENT (204) si no devuelves cuerpo
   async remove(
     @Param('id', ParseIntPipe) id: number,
@@ -81,6 +84,7 @@ export class UserController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.OK)
   async update(
     @Param('id', ParseIntPipe) id: number,

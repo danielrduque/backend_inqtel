@@ -7,6 +7,8 @@ import { UserModule } from './user/user.module';
 import { PagoModule } from './pago/pago.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -30,5 +32,7 @@ import { MailModule } from './mail/mail.module';
     MailModule,
     AuthModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
