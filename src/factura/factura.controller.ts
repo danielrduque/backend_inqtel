@@ -7,13 +7,17 @@ import {
   Res,
   NotFoundException,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { FacturaService } from './factura.service';
 import { CreateFacturaDto } from './dto/create-factura.dto';
 import { Factura } from './entities/factura.entity'; // Importa EstadoFactura
 import { PdfService, ClienteParaPDF } from '../pdf/pdf.service';
 import { Response } from 'express';
-import { join } from 'path';
+import { JwtAuthGuard } from 'src/auth/jwt/jwt.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+//import { join } from 'path';
 
 @Controller('facturas')
 export class FacturaController {
@@ -23,6 +27,8 @@ export class FacturaController {
   ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   create(@Body() dto: CreateFacturaDto): Promise<Factura> {
     return this.facturaService.create(dto);
   }
