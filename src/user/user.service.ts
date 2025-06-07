@@ -3,14 +3,16 @@ import {
   Inject,
   forwardRef,
   NotFoundException,
+  UnauthorizedException, // Para errores de contraseña actual incorrecta
+  BadRequestException, // Para validaciones de nueva contraseña
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from './entities/client.entity';
-import { CreateClientDto } from './dto/create-client.dto';
+import { CreateClientDto } from './dto/create-client.dto'; // Asumo que tienes un DTO similar para ChangePasswordDto o usas campos sueltos
 import { Plan } from '../plan/entities/plan.entity';
 import { FacturaService } from '../factura/factura.service';
-import { Factura } from 'src/factura/entities/factura.entity';
+import { Factura } from '../factura/entities/factura.entity'; // Corregido el path si es necesario
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -23,13 +25,15 @@ export class UserService {
     private readonly planRepository: Repository<Plan>,
 
     @InjectRepository(Factura)
-    private facturaRepository: Repository<Factura>, // <-- Inyecta aquí
+    private facturaRepository: Repository<Factura>,
 
     @Inject(forwardRef(() => FacturaService))
     private readonly facturaService: FacturaService,
   ) {}
 
-  // Crear un cliente
+  // --- Métodos existentes (create, remove, update, findAll, findOne, etc.) ---
+  // ... (tu código existente va aquí)
+
   async create(createClientDto: CreateClientDto): Promise<Client> {
     const cliente = new Client();
     cliente.nombre = createClientDto.nombre;
@@ -42,7 +46,7 @@ export class UserService {
     cliente.estado = createClientDto.estado || 'activo'; // Valor por defecto si no viene
 
     const hashedPassword = await bcrypt.hash(
-      createClientDto.numeroDocumento,
+      createClientDto.numeroDocumento, // La contraseña inicial sigue siendo el número de documento
       10,
     );
     cliente.password = hashedPassword;
@@ -59,14 +63,12 @@ export class UserService {
           `El plan con id ${createClientDto.planId} no fue encontrado.`,
         );
       }
-
       cliente.plan = plan;
     }
 
     const clienteGuardado = await this.clientRepository.save(cliente);
-
+    // Asumo que crearFacturaInicial es un método que existe en tu FacturaService
     await this.facturaService.crearFacturaInicial(clienteGuardado);
-
     return clienteGuardado;
   }
 
@@ -87,20 +89,23 @@ export class UserService {
       throw new NotFoundException(`Cliente con id ${id} no encontrado`);
     }
 
-    if (!updateClientDto) {
-      throw new NotFoundException(`Datos para actualizar no proporcionados`);
+    // No permitir que 'updateClientDto' esté completamente vacío
+    if (Object.keys(updateClientDto).length === 0) {
+      throw new BadRequestException(
+        'No se proporcionaron datos para actualizar.',
+      );
     }
 
+    // Actualizar campos si se proporcionan
     if (updateClientDto.nombre !== undefined)
       cliente.nombre = updateClientDto.nombre;
     if (updateClientDto.tipoDocumento !== undefined)
       cliente.tipoDocumento = updateClientDto.tipoDocumento;
 
-    // Si cambió el numeroDocumento, actualizar también la contraseña
-    if (updateClientDto.numeroDocumento !== undefined) {
+    // Si cambió el numeroDocumento, NO actualizar la contraseña aquí automáticamente.
+    // El cambio de contraseña es una operación separada y más segura.
+    if (updateClientDto.numeroDocumento !== undefined)
       cliente.numeroDocumento = updateClientDto.numeroDocumento;
-      cliente.password = await bcrypt.hash(updateClientDto.numeroDocumento, 10);
-    }
 
     if (updateClientDto.email !== undefined)
       cliente.email = updateClientDto.email;
@@ -109,9 +114,8 @@ export class UserService {
     if (updateClientDto.rol !== undefined) cliente.rol = updateClientDto.rol;
     if (updateClientDto.direccion !== undefined)
       cliente.direccion = updateClientDto.direccion;
-    if (updateClientDto.estado !== undefined) {
+    if (updateClientDto.estado !== undefined)
       cliente.estado = updateClientDto.estado;
-    }
 
     if (updateClientDto.planId !== undefined) {
       const plan = await this.planRepository.findOne({
@@ -124,7 +128,6 @@ export class UserService {
       }
       cliente.plan = plan;
 
-      // Actualizar el valor de las facturas pendientes
       await this.facturaRepository
         .createQueryBuilder()
         .update(Factura)
@@ -132,16 +135,9 @@ export class UserService {
           valor: plan.precio,
         })
         .where('clienteId = :clienteId', { clienteId: cliente.id })
-        .andWhere('estado != :estadoPagada', { estadoPagada: 'pagado' }) // solo facturas no pagadas
+        .andWhere('estado != :estadoPagada', { estadoPagada: 'pagado' })
         .execute();
     }
-
-    // Ya no revisamos updateClientDto.password porque no existe
-    // Eliminamos esta parte:
-    // if (updateClientDto.password !== undefined) {
-    //   cliente.password = await bcrypt.hash(updateClientDto.password, 10);
-    // }
-
     return this.clientRepository.save(cliente);
   }
 
@@ -159,10 +155,14 @@ export class UserService {
   }
 
   async findOneById(clientId: number): Promise<Client | null> {
-    return this.clientRepository.findOne({
+    const cliente = await this.clientRepository.findOne({
       where: { id: clientId },
       relations: ['plan'],
     });
+    if (!cliente) {
+      throw new NotFoundException(`Cliente con ID ${clientId} no encontrado.`);
+    }
+    return cliente;
   }
 
   async findByNumeroDocumento(numeroDocumento: string): Promise<Client | null> {
@@ -170,5 +170,63 @@ export class UserService {
       where: { numeroDocumento },
       relations: ['plan'],
     });
+  }
+
+  // --- NUEVO MÉTODO PARA CAMBIAR CONTRASEÑA ---
+  /**
+   * Cambia la contraseña de un cliente existente.
+   * @param clientId El ID del cliente.
+   * @param currentPassword La contraseña actual del cliente.
+   * @param newPassword La nueva contraseña deseada.
+   * @returns Una promesa con el cliente actualizado o un mensaje de éxito.
+   */
+  async changePassword(
+    clientId: number,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    // Puedes devolver el Client si prefieres
+    if (!currentPassword || !newPassword) {
+      throw new BadRequestException(
+        'La contraseña actual y la nueva son requeridas.',
+      );
+    }
+
+    const cliente = await this.clientRepository.findOne({
+      where: { id: clientId },
+    });
+
+    if (!cliente) {
+      throw new NotFoundException(`Cliente con id ${clientId} no encontrado.`);
+    }
+
+    // Verificar la contraseña actual
+    const isMatch = await bcrypt.compare(currentPassword, cliente.password);
+    if (!isMatch) {
+      throw new UnauthorizedException('La contraseña actual es incorrecta.');
+    }
+
+    // Validar la nueva contraseña (ejemplo básico: longitud mínima)
+    if (newPassword.length < 8) {
+      // Podrías tener validaciones más complejas aquí (mayúsculas, números, etc.)
+      throw new BadRequestException(
+        'La nueva contraseña debe tener al menos 8 caracteres.',
+      );
+    }
+
+    if (newPassword === currentPassword) {
+      throw new BadRequestException(
+        'La nueva contraseña no puede ser igual a la contraseña actual.',
+      );
+    }
+
+    // Hashear la nueva contraseña
+    const salt = await bcrypt.genSalt(10);
+    cliente.password = await bcrypt.hash(newPassword, salt);
+
+    // Guardar los cambios en el cliente (solo la contraseña actualizada)
+    await this.clientRepository.save(cliente);
+
+    return { message: 'Contraseña actualizada exitosamente.' };
   }
 }
