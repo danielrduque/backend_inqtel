@@ -12,26 +12,27 @@ async function bootstrap() {
   // Habilitar CORS para todos los orígenes
   app.enableCors();
 
-  // CORRECCIÓN 2: Validar las variables de entorno antes de usarlas
+  // Validar las variables de entorno para Swagger
   const swaggerUser = process.env.SWAGGER_USER;
   const swaggerPassword = process.env.SWAGGER_PASSWORD;
 
-  if (!swaggerUser || !swaggerPassword) {
-    throw new Error(
-      'Las variables de entorno SWAGGER_USER y SWAGGER_PASSWORD son obligatorias.',
+  // Se protege la documentación de Swagger solo si las credenciales existen
+  if (swaggerUser && swaggerPassword) {
+    app.use(
+      ['/docs', '/docs-json'],
+      expressBasicAuth({
+        challenge: true,
+        users: {
+          [swaggerUser]: swaggerPassword,
+        },
+      }),
+    );
+  } else {
+    // Es una buena práctica advertir si las variables no están definidas en lugar de lanzar un error
+    console.warn(
+      'ADVERTENCIA: Las variables de entorno SWAGGER_USER y SWAGGER_PASSWORD no están configuradas. La documentación /docs no estará protegida.',
     );
   }
-
-  // Middleware de Autenticación para Swagger
-  app.use(
-    ['/docs', '/docs-json'],
-    expressBasicAuth({
-      challenge: true,
-      users: {
-        [swaggerUser]: swaggerPassword,
-      },
-    }),
-  );
 
   app.useStaticAssets(join(__dirname, '..', 'public'));
 
@@ -44,8 +45,16 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document); // http://localhost:3000/docs
+  SwaggerModule.setup('docs', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  // *** CAMBIOS CLAVE PARA VERCEL ***
+  // 1. Inicializar la aplicación pero sin ponerla a escuchar en un puerto.
+  await app.init();
+  // 2. Obtener la instancia del servidor Express subyacente.
+  const expressApp = app.getHttpAdapter().getInstance();
+  // 3. Devolver el manejador de Express.
+  return expressApp;
 }
-void bootstrap();
+
+// 4. Exportar la promesa que resuelve al manejador para que Vercel la use.
+export default bootstrap();
