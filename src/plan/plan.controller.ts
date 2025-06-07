@@ -14,9 +14,9 @@ import { PlanService } from './plan.service';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto'; // Importa el DTO de actualización
 import { Plan } from './entities/plan.entity';
-import { JwtAuthGuard } from 'src/auth/jwt/jwt.guard';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('planes') // Opcional para agrupar en Swagger
 @Controller('planes')
