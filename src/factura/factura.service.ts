@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Factura, EstadoFactura } from './entities/factura.entity';
 import { CreateFacturaDto } from './dto/create-factura.dto';
 import { UserService } from '../user/user.service';
-import { Client } from '../../src/user/entities/client.entity'; // Ajusta la ruta si es diferente
+import { Client } from '../user/entities/client.entity'; // Ajusta la ruta si es diferente
 
 type DatosFacturaDTO =
   | {

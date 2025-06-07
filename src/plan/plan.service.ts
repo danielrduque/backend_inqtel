@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Plan } from './entities/plan.entity';
 import { Client } from '../user/entities/client.entity';
 import { CreatePlanDto } from './dto/create-plan.dto';
-import { Factura } from 'src/factura/entities/factura.entity';
+import { Factura } from '../factura/entities/factura.entity';
 
 @Injectable()
 export class PlanService {

@@ -6,7 +6,7 @@ import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { FacturaModule } from '../factura/factura.module';
 import { PagoModule } from '../pago/pago.module';
-import { Factura } from 'src/factura/entities/factura.entity';
+import { Factura } from '../factura/entities/factura.entity';
 
 @Module({
   imports: [

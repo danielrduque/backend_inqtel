@@ -21,8 +21,8 @@ import { UpdateClientDto } from './dto/update-client.dto';
 import { ChangePasswordDto } from './dto/change-password.dto'; // Importa el nuevo DTO
 import { Client } from './entities/client.entity';
 import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/auth/decorators/roles.decorator'; // Ejemplo si tienes un guard JWT
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator'; // Ejemplo si tienes un guard JWT
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('clientes')

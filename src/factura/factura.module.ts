@@ -6,7 +6,7 @@ import { FacturaService } from './factura.service';
 import { FacturaController } from './factura.controller';
 import { UserModule } from '../user/user.module';
 import { PdfModule } from '../pdf/pdf.module'; // <-- Importa PdfModule
-import { AuthModule } from 'src/auth/auth.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [

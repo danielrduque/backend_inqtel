@@ -14,9 +14,9 @@ import { CreateFacturaDto } from './dto/create-factura.dto';
 import { Factura } from './entities/factura.entity'; // Importa EstadoFactura
 import { PdfService, ClienteParaPDF } from '../pdf/pdf.service';
 import { Response } from 'express';
-import { JwtAuthGuard } from 'src/auth/jwt/jwt.guard';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 //import { join } from 'path';
 
 @Controller('facturas')
