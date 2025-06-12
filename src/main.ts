@@ -66,7 +66,7 @@ async function bootstrap() {
 
   // La lógica para Vercel vs Local es correcta y se mantiene
   if (process.env.NODE_ENV !== 'production') {
-    const port = process.env.PORT || 3001; // Usualmente el backend corre en un puerto diferente al frontend
+    const port = process.env.PORT || 3000; // Usualmente el backend corre en un puerto diferente al frontend
     await app.listen(port);
     console.log(`🚀 Servidor local corriendo en http://localhost:${port}`);
     console.log(`📖 Documentación disponible en http://localhost:${port}/docs`);
