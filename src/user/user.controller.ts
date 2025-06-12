@@ -33,7 +33,7 @@ export class UserController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  @ApiBearerAuth('JWT-auth')
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createClientDto: CreateClientDto): Promise<Client> {
     return this.userService.create(createClientDto);
@@ -42,7 +42,7 @@ export class UserController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  @ApiBearerAuth('JWT-auth')
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK) // O HttpStatus.NO_CONTENT (204) si no devuelves cuerpo
   async remove(
     @Param('id', ParseIntPipe) id: number,
@@ -54,6 +54,9 @@ export class UserController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
   async findAll(): Promise<Client[]> {
     return this.userService.findAll();
   }
@@ -84,7 +87,7 @@ export class UserController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  @ApiBearerAuth('JWT-auth')
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   async update(
     @Param('id', ParseIntPipe) id: number,
