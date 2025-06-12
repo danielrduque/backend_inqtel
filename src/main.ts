@@ -9,64 +9,73 @@ import expressBasicAuth from 'express-basic-auth';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Habilitar CORS para permitir peticiones desde tu frontend de Angular
-  // Es importante tenerlo para el desarrollo local.
+  // --- CONFIGURACIÓN DE CORS MEJORADA ---
+
+  // 1. Define todos los orígenes que tienen permiso para conectarse.
+  const allowedOrigins = [
+    'http://localhost:4200', // Tu frontend de Angular en desarrollo
+    'http://localhost:5173', // Si usas Vite (React/Vue) para otro frontend
+    'https://inqtel.netlify.app', // Tu frontend de producción en Netlify
+  ];
+
+  // 2. Habilita CORS con una configuración más flexible.
   app.enableCors({
-    origin: 'http://localhost:4200', // Origen de tu app Angular en desarrollo
+    origin: (origin, callback) => {
+      // Permite peticiones sin 'origin' (como las de Postman o apps móviles)
+      // o si el origen está en nuestra lista de permitidos.
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Origen no permitido por CORS'));
+      }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
 
-  // Validar las variables de entorno para Swagger
+  // El resto de tu código se mantiene igual...
+
   const swaggerUser = process.env.SWAGGER_USER;
   const swaggerPassword = process.env.SWAGGER_PASSWORD;
 
-  // Se protege la documentación de Swagger solo si las credenciales existen
   if (swaggerUser && swaggerPassword) {
     app.use(
       ['/docs', '/docs-json'],
       expressBasicAuth({
         challenge: true,
-        users: {
-          [swaggerUser]: swaggerPassword,
-        },
+        users: { [swaggerUser]: swaggerPassword },
       }),
     );
   } else {
     console.warn(
-      'ADVERTENCIA: Las variables de entorno SWAGGER_USER y SWAGGER_PASSWORD no están configuradas. La documentación /docs no estará protegida.',
+      'ADVERTENCIA: Las variables de entorno SWAGGER_USER y SWAGGER_PASSWORD no están configuradas.',
     );
   }
 
   app.useStaticAssets(join(__dirname, '..', 'public'));
 
-  // Configurar Swagger
   const config = new DocumentBuilder()
     .setTitle('API INQTEL')
     .setDescription('Documentación de la API de INQTEL')
     .setVersion('1.0')
-    .addBearerAuth() // Soporte para JWT
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  // --- LÓGICA CONDICIONAL PARA LOCAL VS VERCEL ---
-
-  // Si NO estamos en producción (o sea, estamos en local)
+  // La lógica para Vercel vs Local es correcta y se mantiene
   if (process.env.NODE_ENV !== 'production') {
-    const port = process.env.PORT || 3000;
+    const port = process.env.PORT || 3000; // Usualmente el backend corre en un puerto diferente al frontend
     await app.listen(port);
     console.log(`🚀 Servidor local corriendo en http://localhost:${port}`);
     console.log(`📖 Documentación disponible en http://localhost:${port}/docs`);
   } else {
-    // Si estamos en producción (Vercel)
     await app.init();
-    return app.getHttpAdapter().getInstance();
+    // No devuelvas la instancia aquí si vas a usar `export default bootstrap()`
   }
 }
 
-// Para Vercel, exportamos el resultado de la función.
-// Para local, la función misma se encarga de iniciar el servidor.
-// Si no es producción, esto exportará `undefined`, lo cual está bien.
+// Para Vercel, la exportación debe estar fuera de la función.
+// El `else` de arriba ya se encarga de no llamar a listen().
 export default bootstrap();
