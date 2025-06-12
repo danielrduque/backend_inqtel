@@ -49,6 +49,7 @@ export class PagoService {
   async crearPago(createPagoDto: CreatePagoDto) {
     const { facturaId, monto } = createPagoDto;
 
+    // --- Esta parte no cambia ---
     const factura = await this.facturaRepository.findOne({
       where: { id: facturaId },
       relations: ['cliente', 'cliente.plan'],
@@ -86,6 +87,9 @@ export class PagoService {
     factura.estado = EstadoFactura.PAGADO;
     await this.facturaRepository.save(factura);
 
+    // --- INICIO DE LA LÓGICA MODIFICADA ---
+
+    // 1. Preparar los datos para el PDF (esto es igual que antes)
     const clienteDataParaPdf: ClienteParaPDF = {
       nombre: factura.cliente.nombre,
       tipoDocumento: factura.cliente.tipoDocumento,
@@ -95,19 +99,15 @@ export class PagoService {
       direccion: factura.cliente.direccion,
     };
 
-    const fechaFacturaDate =
-      factura.fecha instanceof Date ? factura.fecha : new Date(factura.fecha);
-    const fechaFacturaFormateada = fechaFacturaDate.toISOString().split('T')[0];
+    const fechaFacturaFormateada = new Date(factura.fecha)
+      .toISOString()
+      .split('T')[0];
     const fechaLimiteFactura = factura.fechaLimite
-      ? (factura.fechaLimite instanceof Date
-          ? factura.fechaLimite
-          : new Date(factura.fechaLimite)
-        )
-          .toISOString()
-          .split('T')[0]
+      ? new Date(factura.fechaLimite).toISOString().split('T')[0]
       : 'N/A';
 
-    const filePathOrFileName = await this.pdfService.generarFacturaPDF({
+    // 2. Generar el PDF en memoria para obtener el Buffer
+    const pdfBuffer = await this.pdfService.generarFacturaPDF({
       cliente: clienteDataParaPdf,
       planNombre: factura.cliente.plan.nombre,
       monto: factura.valor,
@@ -118,21 +118,27 @@ export class PagoService {
       concepto: factura.concepto,
     });
 
-    const nombreArchivoPdfParaEmail = `factura_${factura.id}.pdf`;
-    console.log('PDF generado en:', filePathOrFileName);
+    const nombreArchivoPdf = `factura_${factura.id}.pdf`;
 
+    // 3. Enviar el correo con el Buffer como adjunto
     try {
       await this.mailService.sendInvoiceEmail(
         factura.cliente.email,
         `Factura pagada - ID: ${factura.id}`,
         `Estimado/a ${factura.cliente.nombre},\n\nGracias por su pago. Adjuntamos la factura correspondiente.\n\nSaludos.`,
-        nombreArchivoPdfParaEmail,
+        pdfBuffer, // Pasamos el Buffer directamente
+        nombreArchivoPdf, // Y el nombre del archivo
       );
-      console.log(`Correo enviado a ${factura.cliente.email}`);
+      console.log(
+        `Correo con factura adjunta enviado a ${factura.cliente.email}`,
+      );
     } catch (error) {
-      console.error('Error al enviar correo:', error);
+      console.error('Error al enviar correo con adjunto:', error);
     }
 
+    // --- FIN DE LA LÓGICA MODIFICADA ---
+
+    // --- La lógica para generar la siguiente factura no cambia ---
     const fechaBaseNuevaFactura = new Date(factura.fecha);
     const diaOriginalFactura = fechaBaseNuevaFactura.getDate();
     fechaBaseNuevaFactura.setMonth(fechaBaseNuevaFactura.getMonth() + 1);

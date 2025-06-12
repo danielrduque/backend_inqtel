@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import nodemailer from 'nodemailer';
-import type { Transporter } from 'nodemailer';
+import type { Transporter, SendMailOptions } from 'nodemailer';
 import type Mail from 'nodemailer/lib/mailer';
-import { join } from 'path';
-import * as fs from 'fs';
+//import { join } from 'path';
+//import * as fs from 'fs';
 
 @Injectable()
 export class MailService {
@@ -65,24 +65,19 @@ export class MailService {
     toEmail: string,
     subject: string,
     text: string,
-    pdfFileName: string,
+    pdfBuffer: Buffer, // <-- Parámetro 4: El Buffer del PDF
+    pdfFileName: string, // <-- Parámetro 5: El nombre del archivo
   ): Promise<void> {
-    const pdfPath = join(__dirname, '../../public/facturas', pdfFileName);
-
-    // Verificamos que el archivo exista antes de enviarlo
-    if (!fs.existsSync(pdfPath)) {
-      throw new Error('Archivo PDF no encontrado: ' + pdfPath);
-    }
-
-    const mailOptions: Mail.Options = {
-      from: process.env.MAIL_USER,
+    const mailOptions: SendMailOptions = {
+      from: `"INGTEL S.A.S." <${process.env.MAIL_USER}>`,
       to: toEmail,
       subject,
       text,
+      html: `<p>Estimado/a cliente,</p><p>Gracias por su pago. Adjuntamos su factura en este correo.</p><p>Atentamente,<br/>El equipo de INGTEL S.A.S.</p>`,
       attachments: [
         {
           filename: pdfFileName,
-          path: pdfPath,
+          content: pdfBuffer,
           contentType: 'application/pdf',
         },
       ],
@@ -90,9 +85,12 @@ export class MailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log('Correo con factura enviado correctamente a', toEmail);
+      console.log(
+        'Correo con factura adjunta enviado correctamente a',
+        toEmail,
+      );
     } catch (error) {
-      console.error('Error al enviar correo con factura:', error);
+      console.error('Error al enviar correo con adjunto:', error);
       throw error;
     }
   }
