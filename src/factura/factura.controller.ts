@@ -8,6 +8,8 @@ import {
   NotFoundException,
   ParseIntPipe,
   UseGuards,
+  BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { FacturaService } from './factura.service';
 import { CreateFacturaDto } from './dto/create-factura.dto';
@@ -81,10 +83,7 @@ export class FacturaController {
   async descargarFactura(@Param('id') id: string, @Res() res: Response) {
     const facturaIdNumber = Number(id);
     if (isNaN(facturaIdNumber)) {
-      // Considera usar BadRequestException de @nestjs/common
-      return res
-        .status(400)
-        .json({ mensaje: 'El ID de la factura debe ser un número.' });
+      throw new BadRequestException('El ID de la factura debe ser un número.');
     }
 
     const factura = await this.facturaService.findById(facturaIdNumber);
@@ -109,32 +108,39 @@ export class FacturaController {
       email: factura.cliente.email,
       telefono: factura.cliente.telefono,
       direccion: factura.cliente.direccion,
-      // El plan se puede omitir aquí si se pasa planNombre por separado
-      // plan: factura.cliente.plan
     };
 
     const pdfData = {
-      cliente: clienteData, // Correcto: ahora es un objeto ClienteParaPDF
-      planNombre: factura.cliente.plan.nombre, // Añadido
+      cliente: clienteData,
+      planNombre: factura.cliente.plan.nombre,
       monto: factura.valor,
       fecha: new Date(factura.fecha).toISOString().slice(0, 10),
       fechaLimite: factura.fechaLimite
         ? new Date(factura.fechaLimite).toISOString().slice(0, 10)
-        : 'N/A', // Añadido
-      estadoFactura: factura.estado as string, // Añadido (cast a string si el enum es compatible)
+        : 'N/A',
+      estadoFactura: factura.estado as string,
       facturaId: factura.id,
       concepto: factura.concepto,
     };
 
     try {
-      // generarFacturaPDF ahora devuelve la ruta completa del archivo
-      const filePath = await this.pdfService.generarFacturaPDF(pdfData);
-      res.sendFile(filePath); // Envía el archivo usando la ruta completa
+      const pdfBuffer = await this.pdfService.generarFacturaPDF(pdfData);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=factura_${factura.id}.pdf`,
+      );
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      // --- CORRECCIÓN AQUÍ ---
+      // Usamos res.send() para enviar el Buffer, no res.sendFile()
+      res.send(pdfBuffer);
     } catch (error) {
       console.error('Error al generar o enviar el PDF:', error);
-      res
-        .status(500)
-        .json({ mensaje: 'Error al generar el PDF de la factura.' });
+      throw new InternalServerErrorException(
+        'Error al generar el PDF de la factura.',
+      );
     }
   }
 }
