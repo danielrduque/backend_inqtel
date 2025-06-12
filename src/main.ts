@@ -9,20 +9,15 @@ import expressBasicAuth from 'express-basic-auth';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // --- CONFIGURACIÓN DE CORS MEJORADA ---
-
-  // 1. Define todos los orígenes que tienen permiso para conectarse.
+  // --- CONFIGURACIÓN DE CORS ---
   const allowedOrigins = [
     'http://localhost:4200', // Tu frontend de Angular en desarrollo
     'http://localhost:5173', // Si usas Vite (React/Vue) para otro frontend
     'https://inqtel.netlify.app', // Tu frontend de producción en Netlify
   ];
 
-  // 2. Habilita CORS con una configuración más flexible.
   app.enableCors({
     origin: (origin, callback) => {
-      // Permite peticiones sin 'origin' (como las de Postman o apps móviles)
-      // o si el origen está en nuestra lista de permitidos.
       if (!origin || allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
@@ -33,8 +28,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // El resto de tu código se mantiene igual...
-
+  // --- CONFIGURACIÓN DE SWAGGER ---
   const swaggerUser = process.env.SWAGGER_USER;
   const swaggerPassword = process.env.SWAGGER_PASSWORD;
 
@@ -64,18 +58,18 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  // La lógica para Vercel vs Local es correcta y se mantiene
+  // --- LÓGICA DE ARRANQUE CORREGIDA ---
+  // Si NO estamos en producción (ej. `npm run start:dev`)
   if (process.env.NODE_ENV !== 'production') {
-    const port = process.env.PORT || 3000; // Usualmente el backend corre en un puerto diferente al frontend
+    const port = process.env.PORT || 3000; // Puerto 3000 para local
     await app.listen(port);
     console.log(`🚀 Servidor local corriendo en http://localhost:${port}`);
     console.log(`📖 Documentación disponible en http://localhost:${port}/docs`);
   } else {
+    // Si estamos en producción (Vercel), preparamos la app y la retornamos
     await app.init();
-    // No devuelvas la instancia aquí si vas a usar `export default bootstrap()`
+    return app.getHttpAdapter().getInstance();
   }
 }
 
-// Para Vercel, la exportación debe estar fuera de la función.
-// El `else` de arriba ya se encarga de no llamar a listen().
 export default bootstrap();
