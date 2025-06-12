@@ -9,8 +9,13 @@ import expressBasicAuth from 'express-basic-auth';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Habilitar CORS para todos los orígenes
-  app.enableCors();
+  // Habilitar CORS para permitir peticiones desde tu frontend de Angular
+  // Es importante tenerlo para el desarrollo local.
+  app.enableCors({
+    origin: 'http://localhost:4200', // Origen de tu app Angular en desarrollo
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
 
   // Validar las variables de entorno para Swagger
   const swaggerUser = process.env.SWAGGER_USER;
@@ -28,7 +33,6 @@ async function bootstrap() {
       }),
     );
   } else {
-    // Es una buena práctica advertir si las variables no están definidas en lugar de lanzar un error
     console.warn(
       'ADVERTENCIA: Las variables de entorno SWAGGER_USER y SWAGGER_PASSWORD no están configuradas. La documentación /docs no estará protegida.',
     );
@@ -38,8 +42,8 @@ async function bootstrap() {
 
   // Configurar Swagger
   const config = new DocumentBuilder()
-    .setTitle('API')
-    .setDescription('Documentación de la API')
+    .setTitle('API INQTEL')
+    .setDescription('Documentación de la API de INQTEL')
     .setVersion('1.0')
     .addBearerAuth() // Soporte para JWT
     .build();
@@ -47,14 +51,22 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  // *** CAMBIOS CLAVE PARA VERCEL ***
-  // 1. Inicializar la aplicación pero sin ponerla a escuchar en un puerto.
-  await app.init();
-  // 2. Obtener la instancia del servidor Express subyacente.
-  const expressApp = app.getHttpAdapter().getInstance();
-  // 3. Devolver el manejador de Express.
-  return expressApp;
+  // --- LÓGICA CONDICIONAL PARA LOCAL VS VERCEL ---
+
+  // Si NO estamos en producción (o sea, estamos en local)
+  if (process.env.NODE_ENV !== 'production') {
+    const port = process.env.PORT || 3000;
+    await app.listen(port);
+    console.log(`🚀 Servidor local corriendo en http://localhost:${port}`);
+    console.log(`📖 Documentación disponible en http://localhost:${port}/docs`);
+  } else {
+    // Si estamos en producción (Vercel)
+    await app.init();
+    return app.getHttpAdapter().getInstance();
+  }
 }
 
-// 4. Exportar la promesa que resuelve al manejador para que Vercel la use.
+// Para Vercel, exportamos el resultado de la función.
+// Para local, la función misma se encarga de iniciar el servidor.
+// Si no es producción, esto exportará `undefined`, lo cual está bien.
 export default bootstrap();
