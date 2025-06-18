@@ -9,7 +9,7 @@ import {
   ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { PlanService } from './plan.service';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto'; // Importa el DTO de actualización
@@ -26,6 +26,7 @@ export class PlanController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth()
   create(@Body() createPlanDto: CreatePlanDto): Promise<Plan> {
     return this.planService.create(createPlanDto);
   }
@@ -43,6 +44,7 @@ export class PlanController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth()
   @ApiBody({ type: UpdatePlanDto }) // Aquí indicas el DTO para Swagger
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -54,6 +56,7 @@ export class PlanController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth()
   remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.planService.remove(id);
   }

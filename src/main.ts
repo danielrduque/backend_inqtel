@@ -14,6 +14,7 @@ async function bootstrap() {
     'http://localhost:4200', // Tu frontend de Angular en desarrollo
     'http://localhost:5173', // Si usas Vite (React/Vue) para otro frontend
     'https://inqtel.netlify.app', // Tu frontend de producción en Netlify
+    'http://localhost:3000',
   ];
 
   app.enableCors({

@@ -10,15 +10,18 @@ import {
   UseGuards,
   BadRequestException,
   InternalServerErrorException,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FacturaService } from './factura.service';
 import { CreateFacturaDto } from './dto/create-factura.dto';
 import { Factura } from './entities/factura.entity'; // Importa EstadoFactura
 import { PdfService, ClienteParaPDF } from '../pdf/pdf.service';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { ApiBearerAuth } from '@nestjs/swagger';
 //import { join } from 'path';
 
 @Controller('facturas')
@@ -31,6 +34,7 @@ export class FacturaController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
+  @ApiBearerAuth()
   create(@Body() dto: CreateFacturaDto): Promise<Factura> {
     return this.facturaService.create(dto);
   }
@@ -54,12 +58,36 @@ export class FacturaController {
 
   // Agregar este endpoint
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
   findAll(): Promise<Factura[]> {
     return this.facturaService.findAll();
   }
 
+  // --- ENDPOINT CORREGIDO ---
   @Get('historial/:clienteId')
-  findAllByCliente(@Param('clienteId') clienteId: number): Promise<Factura[]> {
+  @UseGuards(JwtAuthGuard) // 1. Solo requiere que el usuario haya iniciado sesión
+  @ApiBearerAuth()
+  async findAllByCliente(
+    @Param('clienteId', ParseIntPipe) clienteId: number,
+    @Req() req: Request, // 2. Obtenemos la petición para saber quién es el usuario
+  ): Promise<Factura[]> {
+    const usuarioAutenticado = req.user as { id: number; rol: string };
+
+    // 3. Lógica de AUTORIZACIÓN
+    // Si el usuario no es admin Y no está pidiendo su propio historial...
+    if (
+      usuarioAutenticado.rol !== 'admin' &&
+      usuarioAutenticado.id !== clienteId
+    ) {
+      // ...le negamos el acceso.
+      throw new ForbiddenException(
+        'No tienes permiso para ver este historial de facturas.',
+      );
+    }
+
+    // 4. Si tiene permiso, se ejecuta la búsqueda y se devuelve el historial.
     return this.facturaService.findAllByClienteId(clienteId);
   }
 
@@ -80,6 +108,8 @@ export class FacturaController {
   }
 
   @Get('pdf/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
   async descargarFactura(@Param('id') id: string, @Res() res: Response) {
     const facturaIdNumber = Number(id);
     if (isNaN(facturaIdNumber)) {

@@ -70,7 +70,7 @@ export class PdfService {
       doc
         .fontSize(18)
         .fillColor(primaryColor)
-        .text('INGTEL S.A.S.', pageMargin, currentY);
+        .text('INQTEL S.A.S.', pageMargin, currentY);
 
       doc
         .font('Helvetica-Bold')

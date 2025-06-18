@@ -69,7 +69,7 @@ export class MailService {
     pdfFileName: string, // <-- Parámetro 5: El nombre del archivo
   ): Promise<void> {
     const mailOptions: SendMailOptions = {
-      from: `"INGTEL S.A.S." <${process.env.MAIL_USER}>`,
+      from: `"INQTEL S.A.S." <${process.env.MAIL_USER}>`,
       to: toEmail,
       subject,
       text,
