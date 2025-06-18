@@ -13,6 +13,9 @@ type DatosFacturaDTO =
       plan: string;
       precio: number;
       fechaLimite: Date;
+      numeroDocumento: string;
+      email: string;
+      telefono: string;
     }
   | { encontrado: false };
 
@@ -131,6 +134,10 @@ export class FacturaService {
       plan: factura.cliente.plan.nombre,
       precio: factura.cliente.plan.precio,
       fechaLimite: factura.fechaLimite,
+      // 👇 CAMPOS AÑADIDOS PARA LA PASARELA 👇
+      numeroDocumento: factura.cliente.numeroDocumento,
+      email: factura.cliente.email,
+      telefono: factura.cliente.telefono,
     };
   }
 }
