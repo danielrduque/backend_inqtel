@@ -67,10 +67,6 @@ export class PdfService {
       let currentY = pageMargin;
 
       // -------- ENCABEZADO EMPRESA Y FACTURA --------
-      doc
-        .fontSize(18)
-        .fillColor(primaryColor)
-        .text('INQTEL S.A.S.', pageMargin, currentY);
 
       doc
         .font('Helvetica-Bold')
@@ -78,7 +74,7 @@ export class PdfService {
         .fontSize(titleFontSize + 1)
         .text(
           'IN QUALITY TELECOMUNICATIONS S.A.S.',
-          pageMargin + 80,
+          pageMargin + 5,
           currentY + 5,
         )
         .font('Helvetica')
@@ -86,17 +82,13 @@ export class PdfService {
         .fillColor(textColor)
         .text(
           'NIT 901323159 - Régimen Simplificado',
-          pageMargin + 80,
+          pageMargin + 5,
           currentY + 23,
         )
-        .text(
-          'No somos Agente Retenedor de IVA',
-          pageMargin + 80,
-          currentY + 36,
-        )
+        .text('No somos Agente Retenedor de IVA', pageMargin + 5, currentY + 36)
         .text(
           'No somos Autorretenedores de Renta',
-          pageMargin + 80,
+          pageMargin + 5,
           currentY + 49,
         );
 
